@@ -1,49 +1,75 @@
 .chat-window {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    flex: 1;
-    background-color: var(--background-color);
+    background-color: #343541;
+    color: white;
 }
 
-.messages {
+.chat-header {
+    padding: 15px;
+    font-size: 18px;
+    background-color: #202123;
+    text-align: center;
+    border-bottom: 1px solid #444;
+}
+
+.chat-messages {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
 }
 
-.message-input {
-    display: flex;
-    padding: 10px;
-    border-top: 1px solid #ccc;
-    background-color: var(--input-background);
+.chat-message {
+    max-width: 70%;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border-radius: 10px;
 }
 
-.message-input input {
+.chat-message.sent {
+    align-self: flex-end;
+    background-color: #0077cc;
+    color: white;
+}
+
+.chat-message.received {
+    align-self: flex-start;
+    background-color: #444;
+    color: white;
+}
+
+.chat-input {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid #444;
+    background-color: #202123;
+}
+
+.chat-input input {
     flex: 1;
     padding: 10px;
-    border-radius: 20px;
     border: none;
-    background-color: var(--input-background);
-    color: var(--text-color);
-    outline: none;
-    transition: background-color 0.3s ease;
-}
-
-.message-input input::placeholder {
-    color: #999;
-}
-
-.message-input button {
-    padding: 10px 15px;
-    background-color: var(--button-background);
-    border: none;
-    border-radius: 10px;
+    border-radius: 5px;
+    background-color: #444;
     color: white;
-    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.chat-input input::placeholder {
+    color: #aaa;
+}
+
+.chat-input button {
+    padding: 10px 15px;
+    background-color: #0077cc;
+    border: none;
+    border-radius: 5px;
+    color: white;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
-.message-input button:hover {
-    background-color: var(--button-hover);
+.chat-input button:hover {
+    background-color: #005fa3;
 }

@@ -1,26 +1,62 @@
-import React from "react";
+import React, { useState } from "react";
 import "./Sidebar.css";
 
-const Sidebar = ({ activeChat, onChatChange, username, avatar, setMenuOpen }) => {
-    const chats = ["Main Room", "SWI2", "TETL1", "AGI3", "VBAP", "PRCS", "AKI2"];
+const Sidebar = ({ activeChat, onChatChange }) => {
+    const chats = ["Main Room", "Chat 1", "Chat 2", "Chat 3"];
+    const [profileOpen, setProfileOpen] = useState(false);
+
+    const toggleProfile = () => {
+        setProfileOpen(!profileOpen);
+    };
 
     return (
         <div className="sidebar">
-            <div className="contacts">
+            <div className="sidebar-header">
+                <h1>Messenger</h1>
+            </div>
+            <div className="chat-list">
                 {chats.map((chat) => (
                     <div
                         key={chat}
-                        className={`contact ${activeChat === chat ? "active" : ""}`}
+                        className={`chat-item ${activeChat === chat ? "active" : ""}`}
                         onClick={() => onChatChange(chat)}
                     >
                         {chat}
                     </div>
                 ))}
             </div>
-            <div className="user-profile" onClick={() => setMenuOpen(true)}>
-                <img src={avatar} alt="Avatar" className="avatar" />
-                <div className="username">{username}</div>
+            <div className="sidebar-footer">
+                {!profileOpen && (
+                    <div className="profile-container" onClick={toggleProfile}>
+                        <img
+                            src="https://via.placeholder.com/40"
+                            alt="Avatar"
+                            className="profile-avatar"
+                        />
+                        <span className="profile-name">Your Name</span>
+                    </div>
+                )}
             </div>
+            {profileOpen && (
+                <div className="profile-modal">
+                    <div className="profile-details">
+                        <img
+                            src="https://via.placeholder.com/80"
+                            alt="Avatar"
+                            className="profile-modal-avatar"
+                        />
+                        <h3>Your Name</h3>
+                        <p>Email: your.email@example.com</p>
+                    </div>
+                    <div className="profile-actions">
+                        <button>Настройки</button>
+                        <button>Log Out</button>
+                    </div>
+                    <button className="close-modal" onClick={toggleProfile}>
+                        Закрыть
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
