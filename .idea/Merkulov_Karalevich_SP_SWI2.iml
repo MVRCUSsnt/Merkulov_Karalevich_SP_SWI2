@@ -20,7 +20,12 @@
       </configuration>
     </facet>
     <facet type="Spring" name="Spring">
-      <configuration />
+      <configuration>
+        <fileset id="fileset" name="WebSocketConfig" removed="false">
+          <file>file://$MODULE_DIR$/src/main/java/com/example/demo/WebSocketConfig/WebSocketConfig.java</file>
+          <file>file://$MODULE_DIR$/src/main/java/com/example/demo/DemoApplication.java</file>
+        </fileset>
+      </configuration>
     </facet>
   </component>
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_19">
