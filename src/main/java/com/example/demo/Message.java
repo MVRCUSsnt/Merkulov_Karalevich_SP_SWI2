@@ -13,6 +13,6 @@ public class Message {
     private String room;
     private LocalDateTime timestamp;
     @ManyToOne
-    private User sender;
+    private Users sender;
 }
 
