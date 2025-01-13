@@ -48,6 +48,7 @@ public class AuthController {
             response.put("token", token);
             return response;
         } catch (AuthenticationException e) {
+            System.err.println("Authentication failed for user: " + username);
             throw new RuntimeException("Invalid username/password");
         }
     }
