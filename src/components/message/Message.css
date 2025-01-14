@@ -1,0 +1,31 @@
+.message {
+    display: flex;
+    flex-direction: column;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 60%;
+}
+
+.message.own {
+    align-self: flex-end;
+    background-color: #d1f7c4;
+    color: #000; /* Ensure text is visible on light green */
+}
+
+.message.other {
+    align-self: flex-start;
+    background-color: #f1f0f0;
+    color: #333; /* Darker text for contrast on light grey */
+}
+
+.message-sender {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.message-content {
+    font-size: 1em;
+    line-height: 1.5;
+}

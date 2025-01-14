@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Sidebar from "./components/Sidebar";
-import ChatWindow from "./components/ChatWindow";
+import Sidebar from "./components/sidebar/Sidebar";
+import ChatWindow from "./components/chatWindow/ChatWindow";
 import "./App.css";
 
 const App = () => {
