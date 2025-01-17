@@ -1,4 +1,4 @@
-# Merkulov Aleksandr - BackEnd 
+# Merkulov Aleksandr R21004 - BackEnd 
 # Karalevich Vitaly - FrontEnd
 
 # 1. User Model
