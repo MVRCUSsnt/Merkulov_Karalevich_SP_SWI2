@@ -1,14 +1,15 @@
-# Merkulov_Karalevich_SP_SWI2
+# Merkulov Aleksandr - BackEnd 
+# Karalevich Vitaly - FrontEnd
 
+# 1. User Model
+# 2. Repository for Database Operations
+# 3. Service for Logic
+    # The service is responsible for business logic, such as registration, user validation, and authentication.
+# 4. Controller for API Routes
+    # The controller provides an API for registration and authentication.
+# 5. Security Configuration (Spring Security + JWT)
+    # Configures Spring Security to use JWT (JSON Web Token).
+# 6. JWT Utility for Token Creation and Validation
+    # A class for creating and validating tokens.
 
-# 1. Модель пользователя
-# 2. Репозиторий для работы с базой данных
-# 3. Сервис для логики
-    #Сервис отвечает за бизнес-логику, такую как регистрация, проверка пользователя и аутентификация.
-# 4. Контроллер для маршрутов API
-    #Контроллер предоставляет API для регистрации и аутентификации.
-# 5. Конфигурация безопасности (Spring Security + JWT)
-    #Настройка Spring Security для использования JWT(JSON Web Token).
-# 6. JWT Utility для создания и проверки токенов
-    #Класс для создания и проверки токенов.
 
