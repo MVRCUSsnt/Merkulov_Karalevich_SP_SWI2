@@ -2,14 +2,19 @@ package com.example.demo.service;
 
 import com.example.demo.UserRepository;
 import com.example.demo.Users;
-import org.springframework.security.core.userdetails.User;
+import com.example.demo.dto.LoginRequest;
+import com.example.demo.dto.UserDTO;
+import com.example.demo.exception.ResourceNotFoundException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -22,30 +27,93 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Users register(String username, String password) {
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists");
-        }
-
-        Users user = new Users();
-        user.setUsername(username);
-        user.setPassword(passwordEncoder.encode(password));
-        return userRepository.save(user);
-    }
-
-    public Optional<Users> findByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
-
+    // Реализация метода для Spring Security
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-
-        return User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .roles("USER")
-                .build();
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        return new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                new ArrayList<>()
+        );
     }
+
+    // Аутентификация
+//    public String authenticate(LoginRequest loginRequest) {
+//        Users user = userRepository.findByUsername(loginRequest.getUsername())
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + loginRequest.getUsername()));
+//
+//        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+//            throw new IllegalArgumentException("Invalid credentials");
+//        }
+//
+//        // Генерация JWT-токена
+//        return "Generated-JWT-Token";
+//    }
+
+    public Users authenticateAndGetUser(LoginRequest loginRequest) {
+        Users user = userRepository.findByUsername(loginRequest.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + loginRequest.getUsername()));
+
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+
+        return user;
+    }
+
+    // Создание пользователя
+    public Users createUser(UserDTO userDTO) {
+        if (userRepository.existsByUsername(userDTO.getUsername())) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+        Users user = new Users();
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setEmail(userDTO.getEmail());
+        return userRepository.save(user);
+    }
+
+    // Получение пользователя по ID
+    public Users getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+    }
+
+    // Получение всех пользователей
+    public List<Users> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepository.findAll(pageable).getContent();
+    }
+
+    // Обновление пользователя
+    public Users updateUser(Long id, UserDTO userDTO) {
+        Users user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setEmail(userDTO.getEmail());
+        return userRepository.save(user);
+    }
+
+    // Удаление пользователя
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("User not found with id: " + id);
+        }
+        userRepository.deleteById(id);
+    }
+
+    public Users getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+    }
+
+
+
 }

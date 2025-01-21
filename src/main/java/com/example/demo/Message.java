@@ -10,7 +10,8 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String content;
-    private String room;
+    @ManyToOne
+    private Room room;
     private LocalDateTime timestamp = LocalDateTime.now();
     @ManyToOne
     private Users sender;
@@ -31,11 +32,11 @@ public class Message {
         this.content = content;
     }
 
-    public String getRoom() {
+    public Room getRoom() {
         return room;
     }
 
-    public void setRoom(String room) {
+    public void setRoom(Room room) {
         this.room = room;
     }
 
