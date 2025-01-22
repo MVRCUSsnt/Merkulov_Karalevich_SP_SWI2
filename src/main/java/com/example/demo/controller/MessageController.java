@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.Message;
 import com.example.demo.MessageRepository;
+import com.example.demo.Room;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class MessageController {
     }
 
     @GetMapping("/{room}")
-    public List<Message> getMessages(@PathVariable String room) {
+    public List<Message> getMessages(@PathVariable Room room) {
         return messageRepository.findByRoom(room);
     }
 
