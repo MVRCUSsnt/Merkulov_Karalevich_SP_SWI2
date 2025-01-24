@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 //@Getter
 //@Setter
 //@NoArgsConstructor
@@ -23,9 +25,18 @@ public class Users {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_rooms", // Таблица связывания
+            joinColumns = @JoinColumn(name = "user_id"), // Связь с таблицей users
+            inverseJoinColumns = @JoinColumn(name = "room_id") // Связь с таблицей rooms
+    )
+    private Set<Room> rooms;
+
 
     @Column(nullable = false)
     private String password;
+
 
     @Column(nullable = true)
     private String avatarUrl; // Для аватара
@@ -40,6 +51,7 @@ public class Users {
         this.password = password;
         this.avatarUrl = avatarUrl;
     }
+
 
     public Long getId() {
         return id;

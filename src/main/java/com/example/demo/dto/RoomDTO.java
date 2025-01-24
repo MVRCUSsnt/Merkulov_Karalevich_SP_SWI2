@@ -4,6 +4,10 @@ public class RoomDTO {
 
     private String name;
 
+    public RoomDTO(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return name;
     }

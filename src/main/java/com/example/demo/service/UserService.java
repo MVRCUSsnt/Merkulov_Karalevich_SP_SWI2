@@ -4,6 +4,7 @@ import com.example.demo.UserRepository;
 import com.example.demo.Users;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.UserDTO;
+import com.example.demo.dto.UserRegistrationDTO;
 import com.example.demo.exception.ResourceNotFoundException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -64,17 +65,17 @@ public class UserService implements UserDetailsService {
     }
 
     // Создание пользователя
-    public Users createUser(UserDTO userDTO) {
-        if (userRepository.existsByUsername(userDTO.getUsername())) {
+    public Users createUser(UserRegistrationDTO userRegistrationDTO) {
+        if (userRepository.existsByUsername(userRegistrationDTO.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
-        if (userRepository.existsByEmail(userDTO.getEmail())) {
+        if (userRepository.existsByEmail(userRegistrationDTO.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
         Users user = new Users();
-        user.setUsername(userDTO.getUsername());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        user.setEmail(userDTO.getEmail());
+        user.setUsername(userRegistrationDTO.getUsername());
+        user.setPassword(passwordEncoder.encode(userRegistrationDTO.getPassword()));
+        user.setEmail(userRegistrationDTO.getEmail());
         return userRepository.save(user);
     }
 
@@ -91,13 +92,13 @@ public class UserService implements UserDetailsService {
     }
 
     // Обновление пользователя
-    public Users updateUser(Long id, UserDTO userDTO) {
+    public Users updateUser(Long id, UserRegistrationDTO userRegistrationDTO) {
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        user.setUsername(userDTO.getUsername());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        user.setEmail(userDTO.getEmail());
+        user.setUsername(userRegistrationDTO.getUsername());
+        user.setPassword(passwordEncoder.encode(userRegistrationDTO.getPassword()));
+        user.setEmail(userRegistrationDTO.getEmail());
         return userRepository.save(user);
     }
 

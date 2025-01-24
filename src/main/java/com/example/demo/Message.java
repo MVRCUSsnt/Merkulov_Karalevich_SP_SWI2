@@ -14,7 +14,7 @@ public class Message {
     private Room room;
     private LocalDateTime timestamp = LocalDateTime.now();
     @ManyToOne
-    private Users sender;
+    private Users users;
 
     public Long getId() {
         return id;
@@ -48,12 +48,12 @@ public class Message {
         this.timestamp = timestamp;
     }
 
-    public Users getSender() {
-        return sender;
+    public Users getUsers() {
+        return users;
     }
 
-    public void setSender(Users sender) {
-        this.sender = sender;
+    public void setUsers(Users users) {
+        this.users = users;
     }
 }
 

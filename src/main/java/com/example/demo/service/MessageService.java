@@ -28,7 +28,7 @@ public class MessageService {
     public Message createMessage(MessageDTO messageDTO) {
         Message message = new Message();
         message.setContent(messageDTO.getContent());
-        setSenderAndRoom(message, messageDTO);
+        setUserAndRoom(message, messageDTO);
         return messageRepository.save(message);
     }
 
@@ -46,7 +46,7 @@ public class MessageService {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
         message.setContent(messageDTO.getContent());
-        setSenderAndRoom(message, messageDTO);
+        setUserAndRoom(message, messageDTO);
         return messageRepository.save(message);
     }
 
@@ -57,10 +57,10 @@ public class MessageService {
         messageRepository.deleteById(id);
     }
 
-    private void setSenderAndRoom(Message message, MessageDTO messageDTO) {
-        Users sender = userRepository.findById(messageDTO.getSenderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Sender not found with id: " + messageDTO.getSenderId()));
-        message.setSender(sender);
+    private void setUserAndRoom(Message message, MessageDTO messageDTO) {
+        Users users = userRepository.findById(messageDTO.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sender not found with id: " + messageDTO.getUserId()));
+        message.setUsers(users);
 
         Room room = roomRepository.findById(messageDTO.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: " + messageDTO.getRoomId()));
