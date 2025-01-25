@@ -10,6 +10,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -29,10 +30,11 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<Room> createChat(@RequestBody @Valid RoomDTO roomDTO) {
-        Room room = roomService.createRoom(roomDTO);
+    public ResponseEntity<Room> createChat(@RequestBody @Valid RoomDTO roomDTO, Principal principal) {
+        Room room = roomService.createRoom(roomDTO, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(room);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Room> getChatById(@PathVariable Long id) {

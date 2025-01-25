@@ -5,6 +5,7 @@ import com.example.demo.MessageRepository;
 import com.example.demo.Room;
 import com.example.demo.Users;
 import com.example.demo.dto.MessageDTO;
+import com.example.demo.service.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +23,12 @@ class MessageControllerTest {
 
     private MessageController messageController;
     private MessageRepository messageRepository;
+    private MessageService messageService;
 
     @BeforeEach
     void setUp() {
         messageRepository = mock(MessageRepository.class);
-        messageController = new MessageController(messageRepository);
+        messageController = new MessageController(messageRepository, messageService);
     }
 
     @Test

@@ -54,7 +54,7 @@ public class AuthController {
         createAccessTokenCookie(response, token, 3600);
 
         // Возвращаем имя пользователя как строку
-        return ResponseEntity.ok(user.getUsername());
+        return ResponseEntity.ok(token);
     }
 
     @PostMapping("/register")

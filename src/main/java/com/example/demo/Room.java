@@ -2,6 +2,7 @@ package com.example.demo;
 
 import jakarta.persistence.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -11,9 +12,24 @@ public class Room {
     private Long id;
     private String name;
     @ManyToMany(mappedBy = "rooms")
-    private Set<Users> users;
-    private String description;
+    private Set<Users> users = new HashSet<>();
 
+    private String description;
+    @ManyToOne
+    @JoinColumn(name = "creator_id")
+    private Users creator;
+
+    public Room(Long id, String name, Set<Users> users, String description, Users creator) {
+        this.id = id;
+        this.name = name;
+        this.users = users;
+        this.description = description;
+        this.creator = creator;
+    }
+
+    public Room() {
+
+    }
 
     public Long getId() {
         return id;
@@ -31,6 +47,14 @@ public class Room {
         this.name = name;
     }
 
+    public Set<Users> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Set<Users> users) {
+        this.users = users;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -38,4 +62,13 @@ public class Room {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public Users getCreator() {
+        return creator;
+    }
+
+    public void setCreator(Users creator) {
+        this.creator = creator;
+    }
+
 }

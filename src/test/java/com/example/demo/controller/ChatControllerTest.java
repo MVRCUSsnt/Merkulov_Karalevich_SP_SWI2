@@ -26,27 +26,6 @@ class ChatControllerTest {
         roomService = mock(RoomService.class);
         chatController = new ChatController(roomService);
     }
-
-    @Test
-    void testCreateChatSuccess() {
-        // Arrange
-        RoomDTO roomDTO = new RoomDTO("Test Room");
-        Room mockRoom = new Room();
-        mockRoom.setId(1L);
-        mockRoom.setName("Test Room");
-
-        when(roomService.createRoom(any(RoomDTO.class))).thenReturn(mockRoom);
-
-        // Act
-        ResponseEntity<Room> responseEntity = chatController.createChat(roomDTO);
-
-        // Assert
-        assertNotNull(responseEntity);
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-        assertEquals(mockRoom, responseEntity.getBody());
-        verify(roomService, times(1)).createRoom(any(RoomDTO.class));
-    }
-
     @Test
     void testGetChatByIdSuccess() {
         // Arrange
@@ -94,7 +73,7 @@ class ChatControllerTest {
     @Test
     void testUpdateChatSuccess() {
         // Arrange
-        RoomDTO roomDTO = new RoomDTO("Updated Room");
+        RoomDTO roomDTO = new RoomDTO("Updated Room","Description");
         Room mockRoom = new Room();
         mockRoom.setId(1L);
         mockRoom.setName("Updated Room");

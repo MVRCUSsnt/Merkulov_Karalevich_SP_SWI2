@@ -4,8 +4,11 @@ import com.example.demo.Message;
 import com.example.demo.MessageRepository;
 import com.example.demo.dto.MessageDTO;
 import com.example.demo.dto.UserDTO;
+import com.example.demo.service.MessageService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,15 +17,18 @@ import java.util.stream.Collectors;
 public class MessageController {
 
     private final MessageRepository messageRepository;
+    private final MessageService messageService;
 
-    public MessageController(MessageRepository messageRepository) {
+    public MessageController(MessageRepository messageRepository, MessageService messageService) {
         this.messageRepository = messageRepository;
+        this.messageService = messageService;
     }
 
-//    @GetMapping("/{roomId}")
-//    public List<Message> getMessages(@PathVariable Long roomId) {
-//        return messageRepository.findByRoomId(roomId);
-//    }
+    @DeleteMapping("/messages/{id}")
+    public ResponseEntity<String> deleteMessage(@PathVariable Long id, Principal principal) {
+        messageService.deleteMessage(id, principal);
+        return ResponseEntity.ok("Message deleted successfully");
+    }
 
     @GetMapping("/{roomId}")
     public List<MessageDTO> getMessages(@PathVariable Long roomId) {

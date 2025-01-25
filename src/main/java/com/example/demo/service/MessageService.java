@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-
+import java.security.Principal;
 import java.util.List;
 
 @Service
@@ -50,10 +50,15 @@ public class MessageService {
         return messageRepository.save(message);
     }
 
-    public void deleteMessage(Long id) {
-        if (!messageRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Message not found with id: " + id);
+    public void deleteMessage(Long id, Principal principal) {
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
+
+        // Проверка на право удаления
+        if (!message.getUsers().getUsername().equals(principal.getName())) {
+            throw new IllegalArgumentException("You are not authorized to delete this message");
         }
+
         messageRepository.deleteById(id);
     }
 
@@ -67,4 +72,3 @@ public class MessageService {
         message.setRoom(room);
     }
 }
-
