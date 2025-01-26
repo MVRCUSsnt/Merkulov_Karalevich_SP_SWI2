@@ -50,7 +50,7 @@ public class MessageController {
 
 
 
-    @PostMapping
+    @PostMapping("/write")
     public Message sendMessage(@RequestBody Message message) {
         return messageRepository.save(message);
     }
