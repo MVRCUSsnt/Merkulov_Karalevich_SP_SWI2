@@ -1,18 +1,15 @@
 package com.example.demo.controller;
 
 import com.example.demo.Room;
-import com.example.demo.Users;
 import com.example.demo.dto.RoomDTO;
 import com.example.demo.service.RoomService;
-import com.example.demo.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
+
 @RestController
 
 public class RoomController {
@@ -23,10 +20,20 @@ public class RoomController {
         this.roomService = roomService;
     }
 
+    @GetMapping("/my-rooms")
+    public ResponseEntity<List<Room>> getUserRooms(
+            Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        List<Room> rooms = roomService.getUserRooms(principal.getName(), page, size);
+        return ResponseEntity.ok(rooms);
+    }
+
 
     @PostMapping("/create")
     public ResponseEntity<RoomDTO> createRoom(@RequestBody RoomDTO roomDTO, Principal principal) {
-        Room room = roomService.createRoom(roomDTO, principal.getName());
+        roomService.createRoom(roomDTO, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(roomDTO);
     }
 

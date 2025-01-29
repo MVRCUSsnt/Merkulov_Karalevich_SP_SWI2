@@ -30,9 +30,9 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<Room> createChat(@RequestBody @Valid RoomDTO roomDTO, Principal principal) {
-        Room room = roomService.createRoom(roomDTO, principal.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(room);
+    public ResponseEntity<RoomDTO> createChat(@RequestBody @Valid RoomDTO roomDTO, Principal principal) {
+        roomService.createRoom(roomDTO, principal.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(roomDTO);
     }
 
 
@@ -41,11 +41,6 @@ public class ChatController {
         return ResponseEntity.ok(roomService.getRoomById(id));
     }
 
-    @GetMapping
-    public ResponseEntity<List<Room>> getAllChats(@RequestParam(defaultValue = "0") int page,
-                                                  @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(roomService.getAllRooms(page, size));
-    }
 
     @PutMapping("/{id}")
     public ResponseEntity<Room> updateChat(@PathVariable Long id, @RequestBody @Valid RoomDTO roomDTO) {

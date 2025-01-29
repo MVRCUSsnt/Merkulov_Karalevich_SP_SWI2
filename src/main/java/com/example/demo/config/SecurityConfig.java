@@ -2,11 +2,8 @@ package com.example.demo.config;
 
 import com.example.demo.security.JwtFilter;
 import com.example.demo.service.CustomUserDetailsService;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -66,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/context-path/v3/api-docs").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-ui.html").permitAll()
+                        .requestMatchers("/api/private-messages").authenticated()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers

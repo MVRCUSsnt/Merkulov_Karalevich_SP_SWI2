@@ -1,9 +1,8 @@
 package com.example.demo.service;
 
-import com.example.demo.UserRepository;
+import com.example.demo.repositories.UserRepository;
 import com.example.demo.Users;
 import com.example.demo.dto.LoginRequest;
-import com.example.demo.dto.UserDTO;
 import com.example.demo.dto.UserRegistrationDTO;
 import com.example.demo.exception.ResourceNotFoundException;
 import org.springframework.data.domain.PageRequest;

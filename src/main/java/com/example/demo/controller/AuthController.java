@@ -32,6 +32,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private static final long COOKIE_EXPIRY = 7 * 24 * 60 * 60; // 7 дней
     private final CookieService cookieService;
+
     public CookieService getCookieService() {
         return cookieService;
     }

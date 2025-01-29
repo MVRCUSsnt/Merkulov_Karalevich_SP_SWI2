@@ -1,10 +1,15 @@
 package com.example.demo.controller;
 
 import com.example.demo.Message;
-import com.example.demo.MessageRepository;
+import com.example.demo.dto.PrivateMessageDTO;
+import com.example.demo.repositories.MessageRepository;
+import com.example.demo.repositories.UserRepository;
+import com.example.demo.Users;
 import com.example.demo.dto.MessageDTO;
 import com.example.demo.dto.UserDTO;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.service.MessageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,10 +23,13 @@ public class MessageController {
 
     private final MessageRepository messageRepository;
     private final MessageService messageService;
+    private final UserRepository userRepository;
 
-    public MessageController(MessageRepository messageRepository, MessageService messageService) {
+    @Autowired
+    public MessageController(MessageRepository messageRepository, MessageService messageService, UserRepository userRepository) {
         this.messageRepository = messageRepository;
         this.messageService = messageService;
+        this.userRepository = userRepository;
     }
 
     @DeleteMapping("/messages/{id}")
@@ -29,6 +37,15 @@ public class MessageController {
         messageService.deleteMessage(id, principal);
         return ResponseEntity.ok("Message deleted successfully");
     }
+
+    @GetMapping
+    public ResponseEntity<List<PrivateMessageDTO>> getFilteredMessages(
+            @RequestParam(required = false) String filter
+    ) {
+        List<PrivateMessageDTO> messages = messageService.getFilteredMessages(filter);
+        return ResponseEntity.ok(messages);
+    }
+
 
     @GetMapping("/{roomId}")
     public List<MessageDTO> getMessages(@PathVariable Long roomId) {
@@ -49,11 +66,19 @@ public class MessageController {
     }
 
 
-
     @PostMapping
-    public Message sendMessage(@RequestBody Message message) {
+    public Message sendMessage(@RequestBody Message message, Principal principal) {
+        if (principal == null) {
+            throw new IllegalArgumentException("User must be authenticated");
+        }
+
+        Users user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        message.setUsers(user);
         return messageRepository.save(message);
     }
+
 
 
 }

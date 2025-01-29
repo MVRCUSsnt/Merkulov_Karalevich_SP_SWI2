@@ -1,8 +1,8 @@
 package com.example.demo.service;
 
 import com.example.demo.Room;
-import com.example.demo.RoomRepository;
-import com.example.demo.UserRepository;
+import com.example.demo.repositories.RoomRepository;
+import com.example.demo.repositories.UserRepository;
 import com.example.demo.Users;
 import com.example.demo.dto.RoomDTO;
 import com.example.demo.exception.ResourceNotFoundException;
@@ -23,7 +23,7 @@ public class RoomService {
         this.userRepository = userRepository;
     }
 
-    public Room createRoom(RoomDTO roomDTO, String creatorUsername) {
+    public void createRoom(RoomDTO roomDTO, String creatorUsername) {
         Users creator = userRepository.findByUsername(creatorUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + creatorUsername));
 
@@ -32,7 +32,7 @@ public class RoomService {
         room.setDescription(roomDTO.getDescription());
         room.setCreator(creator);
         room.getUsers().add(creator);
-        return roomRepository.save(room);
+        roomRepository.save(room);
     }
 
 
@@ -42,9 +42,12 @@ public class RoomService {
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: " + id));
     }
 
-    public List<Room> getAllRooms(int page, int size) {
+    public List<Room> getUserRooms(String username, int page, int size) {
+        Users user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         Pageable pageable = PageRequest.of(page, size);
-        return roomRepository.findAll(pageable).getContent();
+        return roomRepository.findByUsersContaining(user, pageable).getContent();
     }
 
 
