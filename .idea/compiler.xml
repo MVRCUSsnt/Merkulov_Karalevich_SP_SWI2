@@ -20,7 +20,6 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="demo" target="19" />
-      <module name="Merkulov_Karalevich_SP_SWI2" target="19" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
