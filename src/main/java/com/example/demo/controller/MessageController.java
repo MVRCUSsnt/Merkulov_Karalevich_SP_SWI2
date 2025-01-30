@@ -1,12 +1,16 @@
 package com.example.demo.controller;
 
 import com.example.demo.Message;
+import com.example.demo.Room;
+import com.example.demo.Users;
 import com.example.demo.dto.PrivateMessageDTO;
 import com.example.demo.repositories.MessageRepository;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.Users;
+import com.example.demo.Users;
 import com.example.demo.dto.MessageDTO;
 import com.example.demo.dto.UserDTO;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +75,6 @@ public class MessageController {
         if (principal == null) {
             throw new IllegalArgumentException("User must be authenticated");
         }
-
         Users user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -79,6 +82,22 @@ public class MessageController {
         return messageRepository.save(message);
     }
 
+    @PostMapping("/write")
+    public ResponseEntity<String> sendMessage(@RequestBody MessageDTO messageDTO) {
+        Message message = new Message();
+        message.setContent(messageDTO.getContent());
+        // Установите room и users в зависимости от вашей логики
+        Room room = new Room(); // Найдите сущность Room на основе roomId из messageDTO
+        room.setId(messageDTO.getRoomId());
+        message.setRoom(room);
+
+        Users user = new Users(); // Найдите сущность Users на основе userId из messageDTO
+        user.setId(messageDTO.getUserId());
+        message.setUsers(user);
+
+        messageRepository.save(message);
+        return ResponseEntity.ok("Сообщение успешно сохранено");
+    }
 
 
 }

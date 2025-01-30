@@ -1,5 +1,6 @@
 package com.example.demo.utils;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -13,7 +14,7 @@ public class JwtUtil {
     private static final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512); // Генерация ключа
     private static final long EXPIRATION_TIME = 86400000; // 24 часа
 
-    // Генерация токена
+    // 🔹 Генерация токена
     public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
@@ -23,7 +24,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Проверка и извлечение имени пользователя из токена
+    // 🔹 Проверка и извлечение имени пользователя из токена
     public String validateToken(String token) {
         try {
             return Jwts.parserBuilder()
@@ -39,7 +40,24 @@ public class JwtUtil {
         } catch (Exception e) {
             throw new RuntimeException("Invalid token");
         }
-
     }
 
+    // 🔹 Новый метод: Извлечение имени пользователя из токена (заменяет `validateToken`)
+    public String extractUsername(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    // 🔹 Проверка, истек ли токен
+    public boolean isTokenExpired(String token) {
+        return parseClaims(token).getExpiration().before(new Date());
+    }
+
+    // 🔹 Общий метод для парсинга токена
+    private Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
 }
