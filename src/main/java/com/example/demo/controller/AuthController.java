@@ -50,6 +50,8 @@ public class AuthController {
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("id", user.getId());
         responseBody.put("username", user.getUsername());
+        responseBody.put("avatarUrl", user.getAvatarUrl());
+        responseBody.put("email", user.getEmail());
 
         return ResponseEntity.ok(responseBody);
     }

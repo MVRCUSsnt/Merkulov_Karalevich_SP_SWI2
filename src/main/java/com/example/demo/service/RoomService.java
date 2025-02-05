@@ -6,6 +6,7 @@ import com.example.demo.repositories.UserRepository;
 import com.example.demo.Users;
 import com.example.demo.dto.RoomDTO;
 import com.example.demo.exception.ResourceNotFoundException;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -65,7 +66,7 @@ public class RoomService {
         roomRepository.deleteById(id);
     }
 
-
+    @Transactional
     public void addUserToRoom(Long roomId, Long userId, String creatorUsername) {
 
         // Проверяем, существует ли комната
@@ -83,6 +84,10 @@ public class RoomService {
 
         // Добавляем пользователя в комнату
         room.getUsers().add(user);
-        roomRepository.save(room); // Сохраняем изменения
+        user.getRooms().add(room);
+
+        roomRepository.save(room);
+        userRepository.save(user);
     }
+
 }
