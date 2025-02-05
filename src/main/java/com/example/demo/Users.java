@@ -33,6 +33,13 @@ public class Users {
     )
     private Set<Room> rooms;
 
+    public Set<Room> getRooms() {
+        return rooms;
+    }
+
+    public void setRooms(Set<Room> rooms) {
+        this.rooms = rooms;
+    }
 
     @Column(nullable = false)
     private String password;

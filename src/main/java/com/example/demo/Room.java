@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
@@ -12,11 +13,13 @@ public class Room {
     private Long id;
     private String name;
     @ManyToMany(mappedBy = "rooms")
+    @JsonIgnore
     private Set<Users> users = new HashSet<>();
 
     private String description;
     @ManyToOne
     @JoinColumn(name = "creator_id")
+    @JsonIgnore
     private Users creator;
 
     public Room(Long id, String name, Set<Users> users, String description, Users creator) {
