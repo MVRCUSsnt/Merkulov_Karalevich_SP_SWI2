@@ -1,0 +1,87 @@
+.chat-list-container {
+    padding: 10px;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.chat-toggle-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.chat-toggle-buttons button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    background-color: #e0e0e0;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.3s, color 0.3s;
+}
+
+.chat-toggle-buttons button:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.chat-toggle-buttons button:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.chat-toggle-buttons button:hover {
+    background-color: #b0c4de;
+}
+
+.chat-toggle-buttons button.active {
+    background-color: blue;
+    color: white;
+}
+
+.chat-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: calc(100vh - 150px); /* Автоматическая высота с учетом заголовка */
+    overflow-y: scroll; /* Оставляем прокрутку */
+    scrollbar-width: none; /* Скрываем скроллбар в Firefox */
+}
+
+.chat-list::-webkit-scrollbar {
+    display: none; /* Скрываем скроллбар в Chrome и Safari */
+}
+
+.chat-list li {
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    background-color: lightblue;
+    transition: background 0.3s, color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    margin-bottom: 5px;
+    color: black;
+}
+
+.chat-list li:hover {
+    background-color: blue;
+    color: white;
+}
+
+.chat-list li.active {
+    background-color: blue;
+    color: white;
+    font-weight: bold;
+}
+
+.empty-chat-list {
+    text-align: center;
+    color: gray;
+    font-style: italic;
+    padding: 15px;
+}

@@ -1,0 +1,121 @@
+/* Основной контейнер чата */
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #343541;
+    color: white;
+    height: 100vh;
+    margin-left: 280px;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+/* Адаптация под меньшие экраны */
+@media (max-width: 1024px) {
+    .chat-container {
+        margin-left: 220px;
+    }
+}
+
+@media (max-width: 768px) {
+    .chat-container {
+        margin-left: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-container {
+        margin-left: 0;
+    }
+}
+
+/* Контейнер для сообщений */
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Убирает скроллбар в Firefox */
+}
+
+/* Скрываем скроллбар в Chrome и Safari */
+.chat-messages::-webkit-scrollbar {
+    display: none;
+}
+
+/* Поле ввода */
+.chat-input {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid #444;
+    background-color: #202123;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #444;
+    color: white;
+    margin-right: 10px;
+}
+
+.chat-input button {
+    padding: 10px 15px;
+    background-color: #0077cc;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+}
+
+.chat-input button:hover {
+    background-color: #005fa3;
+}
+
+/* Сообщения в чате */
+.message {
+    display: flex;
+    flex-direction: column;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 60%;
+}
+
+/* Стилизация сообщений отправителя */
+.message.own {
+    align-self: flex-end;
+    background-color: #d1f7c4;
+    color: #000;
+}
+
+/* Стилизация сообщений получателя */
+.message.other {
+    align-self: flex-start;
+    background-color: #f1f0f0;
+    color: #333;
+}
+
+/* Убираем скроллбар внутри сообщений */
+.message {
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+}
+
+.message::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+}
+
+/* Имя отправителя */
+.message-sender {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+/* Контент сообщения */
+.message-content {
+    font-size: 1em;
+    line-height: 1.5;
+}
