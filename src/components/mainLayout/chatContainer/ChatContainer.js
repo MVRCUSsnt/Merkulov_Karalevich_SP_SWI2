@@ -1,81 +1,265 @@
 import React, { useEffect, useState, useCallback } from "react";
 import "./ChatContainer.css";
-import Message from "./message/Message"; // Исправленный импорт
+import Message from "./message/Message";
 
-const ChatContainer = ({ activeChatId = 1, onChangeChat, userId, isSidebarOpen }) => {
+const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
-    const [currentChatId, setCurrentChatId] = useState(userId ? activeChatId : 1);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [editedMessage, setEditedMessage] = useState("");
 
-    // ✅ Обернули fetchMessages в useCallback, чтобы избежать проблем с зависимостями useEffect
+    // 🔹 Оптимизированный `fetchMessages`
     const fetchMessages = useCallback(() => {
-        if (currentChatId) {
-            fetch(`http://localhost:8080/api/messages/${currentChatId}`)
-                .then((response) => response.json())
-                .then((data) => setMessages(data))
-                .catch((error) => console.error("Error fetching messages:", error));
-        }
-    }, [currentChatId]); // Зависимость только от `currentChatId`
+        if (!activeChatId) return;
+
+        fetch(`http://localhost:8080/api/messages/${activeChatId}`, {
+            method: "GET",
+            credentials: "include",
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("📩 Полученные сообщения:", data);
+                setMessages(data.map(msg => ({
+                    id: msg.messageId, // ✅ Добавляем ID сообщения
+                    roomId: msg.roomId,
+                    content: msg.content,
+                    timestamp: msg.timestamp,
+                    userDTO: msg.userDTO
+                })));
+            })
+            .catch(error => console.error("❌ Ошибка загрузки сообщений:", error));
+    }, [activeChatId]);
 
     useEffect(() => {
+        setMessages([]);
         fetchMessages();
-    }, [fetchMessages]); // Теперь useEffect корректно следит за зависимостью
+    }, [fetchMessages]);
 
+    // 🔹 Отправка сообщения
     const sendMessage = () => {
-        if (newMessage.trim()) {
-            const messageData = {
-                content: newMessage,
-                roomId: currentChatId,
-                userId: userId || 1,
-                timestamp: new Date().toISOString(),
-            };
+        if (!newMessage.trim()) return;
 
-            fetch(`http://localhost:8080/api/messages/write`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(messageData),
+        const messageData = {
+            content: newMessage,
+            roomId: activeChatId,
+            userId: userId || parseInt(localStorage.getItem("userId"), 10),
+            timestamp: new Date().toISOString(),
+        };
+
+        fetch("http://localhost:8080/api/messages/write", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(messageData),
+        })
+            .then(response => {
+                if (!response.ok) throw new Error(`Ошибка: ${response.status}`);
+
+                // Проверяем, является ли ответ JSON
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return response.json(); // ✅ Если JSON — парсим
+                } else {
+                    return response.text(); // ❗ Иначе читаем как текст
+                }
             })
-                .then(() => {
-                    setNewMessage("");
-                    fetchMessages(); // Перезапрос сообщений после отправки
-                })
-                .catch((error) => console.error("Error sending message:", error));
+            .then(data => {
+                console.log("📩 Ответ сервера на отправку сообщения:", data);
+                setNewMessage("");
+                fetchMessages(); // Обновляем чат после отправки
+            })
+            .catch(error => console.error("❌ Ошибка отправки сообщения:", error));
+    };
+
+
+    // 🔹 Удаление сообщения
+    const deleteMessage = (messageId) => {
+        if (!messageId) {
+            console.error("❌ Ошибка: ID сообщения отсутствует");
+            return;
         }
+
+        fetch(`http://localhost:8080/api/messages/delete/${messageId}`, {
+            method: "DELETE",
+            credentials: "include",
+        })
+            .then(response => {
+                if (!response.ok) throw new Error("Ошибка при удалении сообщения");
+                return response.text();
+            })
+            .then(() => {
+                console.log(`🗑️ Сообщение с ID ${messageId} удалено`);
+                setSelectedMessage(null);
+                fetchMessages();
+            })
+            .catch(error => console.error("❌ Ошибка удаления сообщения:", error));
+    };
+
+
+    // 🔹 Редактирование сообщения
+    const editMessage = () => {
+        if (!selectedMessage || !selectedMessage.id) {
+            console.error("❌ Ошибка: ID сообщения отсутствует");
+            return;
+        }
+
+        if (!editedMessage.trim()) return;
+
+        const updatedMessageData = {
+            content: editedMessage,
+        };
+
+        fetch(`http://localhost:8080/api/messages/edit/${selectedMessage.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(updatedMessageData),
+        })
+            .then(response => {
+                if (!response.ok) throw new Error("Ошибка при редактировании сообщения");
+                return response.json();
+            })
+            .then(() => {
+                setSelectedMessage(null);
+                fetchMessages();
+            })
+            .catch(error => console.error("❌ Ошибка редактирования сообщения:", error));
+    };
+
+    // 🔹 Получение участников чата
+    const fetchChatUsers = () => {
+        fetch(`http://localhost:8080/api/rooms/${activeChatId}/users`, {
+            method: "GET",
+            credentials: "include",
+        })
+            .then(response => response.json())
+            .then(data => setUsers(data))
+            .catch(error => console.error("❌ Ошибка загрузки участников:", error));
+    };
+
+    // 🔹 Добавление участника
+    const handleAddUser = () => {
+        const userName = prompt("Введите имя пользователя для добавления:");
+        if (!userName) return;
+
+        fetch(`http://localhost:8080/api/rooms/addUser/${activeChatId}/${userName}`, {
+            method: "GET",
+            credentials: "include",
+        })
+            .then(response => response.text())
+            .then(() => {
+                alert(`✅ Пользователь ${userName} успешно добавлен в чат!`);
+                fetchChatUsers();
+            })
+            .catch(error => alert(`❌ Ошибка: ${error.message}`));
     };
 
     return (
         <div className="chat-container">
+            {/* Хедер чата */}
             <div className="chat-header">
-                <span>Chat Room: {currentChatId}</span>
-                {userId && (
-                    <button onClick={() => setCurrentChatId(currentChatId === 1 ? 2 : 1)}>
-                        Switch to Room {currentChatId === 1 ? 2 : 1}
-                    </button>
-                )}
+                <span className="chat-title">{chatInfo?.name || `Чат ${activeChatId}`}</span>
+                <button className="chat-info-btn" onClick={() => setIsModalOpen(true)}>ℹ️</button>
             </div>
+
             <div className="chat-messages">
                 {messages.map((message, index) => (
                     <Message
-                        key={index}
+                        key={message.id || `msg-${index}`}
+                        messageId={message.id}
                         content={message.content}
                         sender={{
-                            name: message.userDTO?.username || "Guest",
-                            avatarUrl: message.userDTO?.avatarUrl || "",
+                            name: message.userDTO?.username || "Anonymous",
+                            avatarUrl: message.userDTO?.avatarUrl || "/default-avatar.webp",
                         }}
-                        isOwnMessage={message.userDTO?.id === (userId || 1)}
+                        timestamp={message.timestamp}
+                        isOwnMessage={message.userId === (userId || parseInt(localStorage.getItem("userId"), 10))}
+                        onClick={() => {
+                            console.log("🔹 Выбрано сообщение:", message); // ✅ Логируем, что передаем в `setSelectedMessage`
+                            setSelectedMessage(message);
+                        }}
                     />
                 ))}
             </div>
+
+
+            {/* Поле ввода */}
             <div className="chat-input">
                 <input
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder="Введите сообщение..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
-                <button onClick={sendMessage}>Send</button>
+                <button onClick={sendMessage}>Отправить</button>
             </div>
+
+            {/* Модальное окно редактирования сообщений */}
+            {selectedMessage && (
+                <div className="message-edit-modal">
+                    <div className="message-edit-content">
+                        <h3>Редактировать сообщение</h3>
+                        <textarea
+                            value={editedMessage}
+                            onChange={(e) => setEditedMessage(e.target.value)}
+                        />
+                        <button onClick={() => editMessage(selectedMessage.id)}>Сохранить</button>
+                        <button onClick={() => {
+                            if (selectedMessage && selectedMessage.id) {
+                                deleteMessage(selectedMessage.id);
+                            } else {
+                                console.error("❌ Ошибка: selectedMessage или его ID отсутствует", selectedMessage);
+                            }
+                        }}>Удалить
+                        </button>
+                        <button onClick={() => setSelectedMessage(null)}>Отмена</button>
+                    </div>
+                </div>
+            )}
+
+
+            {/* Модальное окно с информацией о чате */}
+            {isModalOpen && (
+                <div className="chat-modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="chat-modal" onClick={(e) => e.stopPropagation()}>
+                        <h2>{chatInfo?.name || `Чат ${activeChatId}`}</h2>
+                        <p>{chatInfo?.description || "Описание отсутствует"}</p>
+                        <button className="chat-modal-btn" onClick={() => {
+                            fetchChatUsers(); // ✅ Добавляем вызов перед открытием окна
+                            setIsUsersModalOpen(true);
+                        }}>Информация о участниках
+                        </button>
+                        <button className="chat-modal-btn" onClick={handleAddUser}>Добавить участника</button>
+                        <button className="chat-modal-close" onClick={() => setIsModalOpen(false)}>Закрыть</button>
+                    </div>
+                </div>
+            )}
+            {/* Модальное окно с участниками */}
+            {isUsersModalOpen && (
+                <div className="chat-modal-overlay" onClick={() => setIsUsersModalOpen(false)}>
+                    <div className="chat-modal" onClick={(e) => e.stopPropagation()}>
+                        <h2>Участники чата</h2>
+                        {users.length > 0 ? (
+                            <ul className="chat-users-list">
+                                {users.map(user => (
+                                    <li key={user.id} className="chat-user">
+                                        <img src={user.avatarUrl || "/default-avatar.webp"} alt="Аватар"
+                                             className="user-avatar"/>
+                                        <span>{user.username}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p>Нет участников</p>}
+                        <button className="chat-modal-btn" onClick={fetchChatUsers}>Обновить список</button>
+                        <button className="chat-modal-close" onClick={() => setIsUsersModalOpen(false)}>Закрыть</button>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

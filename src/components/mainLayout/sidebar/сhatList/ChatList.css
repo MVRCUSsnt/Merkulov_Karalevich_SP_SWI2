@@ -1,9 +1,12 @@
+/* Контейнер для списка чатов */
 .chat-list-container {
-    padding: 10px;
-    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Растягиваем контейнер на весь экран */
     overflow: hidden;
 }
 
+/* Контейнер для переключателя вкладок */
 .chat-toggle-buttons {
     display: flex;
     justify-content: space-between;
@@ -40,48 +43,54 @@
     color: white;
 }
 
+/* Чат-лист */
 .chat-list {
+    flex-grow: 1; /* ❗ Делаем список чатов гибким, чтобы он занимал всю высоту */
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: calc(100vh - 150px); /* Автоматическая высота с учетом заголовка */
-    overflow-y: scroll; /* Оставляем прокрутку */
+    overflow-y: auto;
     scrollbar-width: none; /* Скрываем скроллбар в Firefox */
 }
 
+/* Скрываем скроллбар в Chrome, Safari, Edge */
 .chat-list::-webkit-scrollbar {
-    display: none; /* Скрываем скроллбар в Chrome и Safari */
+    display: none;
 }
 
-.chat-list li {
-    padding: 15px;
-    border-radius: 10px;
-    cursor: pointer;
-    text-align: center;
-    background-color: lightblue;
-    transition: background 0.3s, color 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 50px;
-    margin-bottom: 5px;
-    color: black;
-}
-
-.chat-list li:hover {
-    background-color: blue;
-    color: white;
-}
-
-.chat-list li.active {
-    background-color: blue;
-    color: white;
-    font-weight: bold;
-}
-
+/* Если список пуст */
 .empty-chat-list {
     text-align: center;
     color: gray;
     font-style: italic;
     padding: 15px;
+}
+
+/* Контейнер для списка групп */
+.group-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1; /* ❗ Даем возможность списку чатов расширяться */
+    overflow: hidden;
+}
+
+/* Кнопка добавления группы */
+.add-group-chat {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    cursor: pointer;
+    background-color: #4caf50;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 10px;
+    transition: background 0.3s ease;
+    margin-top: auto; /* ❗ Гарантируем, что кнопка всегда внизу */
+    text-align: center;
+}
+
+.add-group-chat:hover {
+    background-color: #45a049;
 }

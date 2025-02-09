@@ -1,14 +1,12 @@
 import React from "react";
 import "./ChatList.css";
 
-const ChatList = ({
-                      personalChats = [],
-                      groupChats = [],
-                      activeChatId,
-                      onSelectChat,
-                      isPersonal,
-                      setIsPersonal
-                  }) => {
+const ChatList = ({ personalChats = [], groupChats = [], activeChatId, onSelectChat, isPersonal, setIsPersonal, onAddGroupChat }) => {
+    console.log("📌 Переключение вкладок:");
+    console.log("🔹 Личные сообщения?", isPersonal);
+    console.log("🔹 Список личных чатов:", personalChats);
+    console.log("🔹 Список групповых чатов:", groupChats);
+
     return (
         <div className="chat-list-container">
             <div className="chat-toggle-buttons">
@@ -20,20 +18,31 @@ const ChatList = ({
                 </button>
             </div>
 
-            <ul className="chat-list">
-                {(isPersonal ? personalChats : groupChats).map((chat) => (
-                    <li
-                        key={chat.id}
-                        className={chat.id === activeChatId ? "active" : ""}
-                        onClick={() => onSelectChat(chat.id)}
-                    >
-                        <div className="chat-item">
-                            <span className="chat-name">{chat.name}</span>
-                            <p className="chat-description">{chat.description}</p>
-                        </div>
-                    </li>
-                ))}
-            </ul>
+            <div className="group-section">
+                <ul className="chat-list">
+                    {(isPersonal ? personalChats : groupChats).map((chat) => {
+                        console.log(`📝 Отображение чата: ID ${chat.id}, Название: ${chat.name}`);
+                        return (
+                            <li
+                                key={chat.id}
+                                className={chat.id === activeChatId ? "active" : ""}
+                                onClick={() => {
+                                    console.log(`📌 Выбран чат: ${chat.id}`);
+                                    onSelectChat(chat.id);
+                                }}
+                            >
+                                <div className="chat-item">
+                                    <span className="chat-name">{chat.name}</span>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+
+                {!isPersonal && (
+                    <button className="add-group-chat" onClick={onAddGroupChat}>+</button>
+                )}
+            </div>
         </div>
     );
 };

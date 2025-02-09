@@ -2,7 +2,6 @@
 .sidebar {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     height: 100vh;
     width: 280px;
     background-color: #202123;
@@ -11,17 +10,17 @@
     left: 0;
     top: 0;
     bottom: 0;
-    overflow: hidden; /* Убираем глобальный скролл */
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
     transition: width 0.3s ease-in-out;
+    overflow: hidden;
 }
 
 /* Контейнер для списка чатов */
 .chat-list-container {
-    flex-grow: 1; /* Позволяет списку чатов расти */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Отключаем скролл */
+    overflow-y: auto; /* Теперь работает скролл, если чатов много */
     padding: 10px;
 }
 
@@ -68,8 +67,23 @@
     padding: 0;
     margin: 0;
     flex-grow: 1;
-    overflow-y: clip; /* Если слишком много чатов, они скроются */
-    max-height: calc(100vh - 180px); /* Ограничиваем высоту, чтобы не перекрывал профиль */
+    overflow-y: auto; /* Разрешаем скролл при большом количестве чатов */
+    max-height: calc(100vh - 220px); /* Оставляем место для профиля и кнопки "+" */
+    scrollbar-width: thin;
+    scrollbar-color: #888 #202123;
+}
+
+.chat-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-list::-webkit-scrollbar-track {
+    background: #202123;
+}
+
+.chat-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
 }
 
 .chat-list li {
@@ -93,6 +107,25 @@
     color: white;
 }
 
+/* Кнопка добавления группы */
+.add-group-chat {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    cursor: pointer;
+    background-color: #4caf50;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+.add-group-chat:hover {
+    background-color: #45a049;
+}
+
 /* Профиль внизу */
 .profile-container {
     display: flex;
@@ -101,11 +134,8 @@
     padding: 10px;
     background-color: #1e1e1e;
     border-radius: 10px;
-    position: absolute;
-    bottom: 10px; /* Оставляем отступ снизу */
-    left: 50%;
-    transform: translateX(-50%);
     width: 90%;
+    margin: 10px auto; /* Центрируем и добавляем отступ */
     cursor: pointer;
     transition: background-color 0.3s ease;
 }

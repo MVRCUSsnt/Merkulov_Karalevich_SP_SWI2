@@ -5,7 +5,7 @@ import Registration from "../../authForm/registration/Registration";
 import UserProfile from "./userProfile/UserProfile";
 import ChatList from "./сhatList/ChatList";
 
-const Sidebar = () => {
+const Sidebar = ({ activeChatId, onSelectChat }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [formType, setFormType] = useState(null);
@@ -15,6 +15,7 @@ const Sidebar = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isPersonal, setIsPersonal] = useState(true);
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("user")); // Проверка авторизации
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -25,42 +26,101 @@ const Sidebar = () => {
             localStorage.removeItem("userId");
             localStorage.removeItem("avatarUrl");
             setIsProfileOpen(false);
+            setIsLoggedIn(false);
+        } else {
+            fetchGroupChats(); // 🔹 Загружаем чаты при входе
         }
     }, []);
 
     const fetchGroupChats = () => {
-        if (isGroupsLoaded) return; // Не загружать повторно, если уже загружены
+        if (isGroupsLoaded) return;
 
         setLoading(true);
-        fetch("http://localhost:8080/my-rooms?page=0&size=10", {
+        fetch("http://localhost:8080/api/rooms/my-rooms?page=0&size=10", {
             method: "GET",
-            credentials: "include", // ВАЖНО: позволяет браузеру отправлять куки с запросом
+            credentials: "include",
         })
-            .then(response => {
-                if (!response.ok) throw new Error("Ошибка загрузки чатов");
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                setGroupChats(prev => [...prev, ...data]); // Добавляем к Main Room загруженные чаты
+                // ✅ Удаляем дубликаты
+                const uniqueChats = [...new Map(data.map(chat => [chat.id, chat])).values()];
+
+                // ✅ Добавляем "Main Room" только если его нет в списке
+                const updatedChats = uniqueChats.some(chat => chat.id === 1)
+                    ? uniqueChats
+                    : [{ id: 1, name: "Main Room", description: "Основная комната" }, ...uniqueChats];
+
+                setGroupChats(updatedChats);
                 setIsGroupsLoaded(true);
             })
             .catch(error => setError(error.message))
             .finally(() => setLoading(false));
-
     };
 
-    const handleLogin = (userData) => {
-        localStorage.setItem("user", userData.username);
-        localStorage.setItem("userId", userData.id);
-        localStorage.setItem("avatarUrl", userData.avatarUrl || "https://via.placeholder.com/50");
-        setIsProfileOpen(true);
+    const handleAddGroupChat = () => {
+        const groupName = prompt("Введите название новой группы:");
+        if (!groupName) return;
+
+        const groupDescription = prompt("Введите описание новой группы:");
+
+        const newRoom = {
+            name: groupName,
+            description: groupDescription || "Описание отсутствует",
+        };
+
+        fetch("http://localhost:8080/api/rooms/create", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newRoom),
+        })
+            .then(response => response.json())
+            .then(createdRoom => {
+                setGroupChats(prev => [...prev, createdRoom]); // Добавляем новый чат в список
+            })
+            .catch(error => alert(`Ошибка: ${error.message}`));
     };
 
-    const handleLogout = () => {
+    // 🔹 Логаут: Очистка чатов, удаление данных пользователя, рендер Main Room
+    const handleLogout = async () => {
+        try {
+            await fetch("http://localhost:8080/api/auth/logout", {
+                method: "POST",
+                credentials: "include",
+            });
+        } catch (error) {
+            console.error("Ошибка при выходе:", error);
+        }
+
+        // ❗ Очистка данных
         localStorage.removeItem("user");
         localStorage.removeItem("userId");
         localStorage.removeItem("avatarUrl");
         setIsProfileOpen(false);
+        setIsLoggedIn(false);
+
+        // ❗ Очищаем список чатов
+        setPersonalChats([]);
+        setGroupChats([{ id: 1, name: "Main Room", description: "Основная комната" }]);
+
+        // ❗ Обновляем UI
+        setIsGroupsLoaded(false);
+
+        // ❗ Автоматически рендерим Main Room (ID 1)
+        onSelectChat(1);
+    };
+
+    // 🔹 Авторизация (вход)
+    const handleLogin = (userData) => {
+        localStorage.setItem("user", userData.username);
+        localStorage.setItem("userId", userData.id);
+        localStorage.setItem("email", userData.email || "");
+        localStorage.setItem("avatarUrl", userData.avatarUrl || "/default-avatar.webp");
+
+        setIsLoggedIn(true);
+        setIsProfileOpen(false); // ❗ Профиль НЕ открывается автоматически
+        setFormType(null); // ❗ Закрываем окно логина
+        fetchGroupChats(); // 🔹 Загружаем чаты после входа
     };
 
     return (
@@ -69,20 +129,21 @@ const Sidebar = () => {
 
             <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
                 <div className="profile-container" onClick={() => localStorage.getItem("user") ? setIsProfileOpen(!isProfileOpen) : setFormType("login")}>
-                    <img src={localStorage.getItem("avatarUrl") || "https://via.placeholder.com/50"} alt="Avatar" className="profile-avatar" />
+                    <img src={localStorage.getItem("avatarUrl") || "/default-avatar.webp"} alt="Avatar" className="profile-avatar" />
                     <div className="profile-name">{localStorage.getItem("user") || "Login"}</div>
                 </div>
 
                 <ChatList
                     personalChats={personalChats}
                     groupChats={groupChats}
-                    activeChatId={null}
-                    onSelectChat={() => {}}
+                    activeChatId={activeChatId}
+                    onSelectChat={onSelectChat}
                     isPersonal={isPersonal}
                     setIsPersonal={(value) => {
                         setIsPersonal(value);
-                        if (!value) fetchGroupChats(); // Загружаем группы при переключении на вкладку "Группы"
+                        if (!value) fetchGroupChats();
                     }}
+                    onAddGroupChat={handleAddGroupChat} // ❗ Кнопка "+" теперь всегда доступна
                 />
 
                 {loading && <p>Загрузка...</p>}
@@ -90,7 +151,11 @@ const Sidebar = () => {
             </div>
 
             {isProfileOpen && localStorage.getItem("user") && (
-                <UserProfile onLogout={handleLogout} onClose={() => setIsProfileOpen(false)} username={localStorage.getItem("user")} />
+                <UserProfile
+                    onLogout={handleLogout} // Передаем логаут
+                    onClose={() => setIsProfileOpen(false)}
+                    username={localStorage.getItem("user")}
+                />
             )}
 
             {formType && (

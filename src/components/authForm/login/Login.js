@@ -24,7 +24,7 @@ const Login = ({ onSubmit, onClose, onSwitch }) => {
                 localStorage.setItem("user", data.username);
                 localStorage.setItem("userId", data.id);
                 localStorage.setItem("email", data.email || "");
-                localStorage.setItem("avatarUrl", data.avatarUrl || "https://via.placeholder.com/100");
+                localStorage.setItem("avatarUrl", data.avatarUrl || "/default-avatar.webp");
                 onSubmit(data);
             })
             .catch(() => alert("Login failed!"));

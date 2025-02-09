@@ -4,7 +4,7 @@ import "./UserProfile.css";
 const UserProfile = ({ onLogout, onClose }) => {
     const [user, setUser] = useState({
         username: localStorage.getItem("user") || "Guest",
-        avatarUrl: localStorage.getItem("avatarUrl") || "https://via.placeholder.com/100",
+        avatarUrl: localStorage.getItem("avatarUrl") || "/default-avatar.webp",
         email: localStorage.getItem("email") || "No email available"
     });
 
@@ -12,7 +12,7 @@ const UserProfile = ({ onLogout, onClose }) => {
         const handleStorageChange = () => {
             setUser({
                 username: localStorage.getItem("user") || "Guest",
-                avatarUrl: localStorage.getItem("avatarUrl") || "https://via.placeholder.com/100",
+                avatarUrl: localStorage.getItem("avatarUrl") || "/default-avatar.webp",
                 email: localStorage.getItem("email") || "No email available"
             });
         };
@@ -31,7 +31,7 @@ const UserProfile = ({ onLogout, onClose }) => {
         localStorage.removeItem("user");
         localStorage.removeItem("avatarUrl");
         localStorage.removeItem("email");
-        setUser({ username: "Guest", avatarUrl: "https://via.placeholder.com/100", email: "No email available" });
+        setUser({ username: "Guest", avatarUrl: "/default-avatar.webp", email: "No email available" });
         onLogout();
     };
 

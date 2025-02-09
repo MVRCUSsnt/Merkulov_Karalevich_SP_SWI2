@@ -10,34 +10,41 @@
     transition: margin-left 0.3s ease-in-out;
 }
 
-/* Адаптация под меньшие экраны */
-@media (max-width: 1024px) {
-    .chat-container {
-        margin-left: 220px;
-    }
+/* Заголовок чата */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: #202123;
+    border-bottom: 1px solid #444;
 }
 
-@media (max-width: 768px) {
-    .chat-container {
-        margin-left: 60px;
-    }
+.chat-title {
+    font-size: 18px;
+    font-weight: bold;
 }
 
-@media (max-width: 480px) {
-    .chat-container {
-        margin-left: 0;
-    }
+.chat-info-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: white;
+    cursor: pointer;
 }
 
-/* Контейнер для сообщений */
+.chat-info-btn:hover {
+    color: #0077cc;
+}
+
+/* Сообщения */
 .chat-messages {
     flex: 1;
     padding: 15px;
     overflow-y: auto;
-    scrollbar-width: none; /* Убирает скроллбар в Firefox */
+    scrollbar-width: none;
 }
 
-/* Скрываем скроллбар в Chrome и Safari */
 .chat-messages::-webkit-scrollbar {
     display: none;
 }
@@ -73,49 +80,88 @@
     background-color: #005fa3;
 }
 
-/* Сообщения в чате */
-.message {
+/* Модальное окно */
+.chat-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.chat-modal {
+    background: #282c34;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+    width: 320px;
+}
+
+.chat-modal h2 {
+    margin-bottom: 10px;
+}
+
+/* Список участников */
+.chat-users-list {
+    list-style: none;
+    padding: 0;
     margin: 10px 0;
-    padding: 10px;
-    border-radius: 8px;
-    max-width: 60%;
-}
-
-/* Стилизация сообщений отправителя */
-.message.own {
-    align-self: flex-end;
-    background-color: #d1f7c4;
-    color: #000;
-}
-
-/* Стилизация сообщений получателя */
-.message.other {
-    align-self: flex-start;
-    background-color: #f1f0f0;
-    color: #333;
-}
-
-/* Убираем скроллбар внутри сообщений */
-.message {
+    max-height: 200px;
     overflow-y: auto;
-    scrollbar-width: none; /* Firefox */
 }
 
-.message::-webkit-scrollbar {
-    display: none; /* Chrome, Safari */
-}
-
-/* Имя отправителя */
-.message-sender {
-    font-size: 0.9em;
-    font-weight: bold;
+/* Элемент списка участника */
+.chat-users-list li {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #3b3f46;
+    border-radius: 5px;
     margin-bottom: 5px;
+    font-size: 14px;
+    color: white;
 }
 
-/* Контент сообщения */
-.message-content {
-    font-size: 1em;
-    line-height: 1.5;
+/* Маленькие фото участников */
+.user-avatar {
+    width: 35px; /* 🔹 Уменьшенный размер фото */
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+/* Кнопки модального окна */
+.chat-modal-btn {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    cursor: pointer;
+    background-color: #0077cc;
+    color: white;
+    border-radius: 5px;
+}
+
+.chat-modal-btn:hover {
+    background-color: #005fa3;
+}
+
+.chat-modal-close {
+    background: red;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.chat-modal-close:hover {
+    background: darkred;
 }
