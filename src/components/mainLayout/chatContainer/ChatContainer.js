@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import "./ChatContainer.css";
 import Message from "./message/Message";
+import WebSocketService from "./WebSocketService";
 
 const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
     const [messages, setMessages] = useState([]);
@@ -23,7 +24,7 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
             .then(data => {
                 console.log("📩 Полученные сообщения:", data);
                 setMessages(data.map(msg => ({
-                    id: msg.messageId, // ✅ Добавляем ID сообщения
+                    id: msg.messageId, // ✅ Исправлено: ID сообщения
                     roomId: msg.roomId,
                     content: msg.content,
                     timestamp: msg.timestamp,
@@ -33,21 +34,40 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
             .catch(error => console.error("❌ Ошибка загрузки сообщений:", error));
     }, [activeChatId]);
 
+    // 🔹 Загружаем сообщения при смене чата
     useEffect(() => {
-        setMessages([]);
+        setMessages([]); // Очищаем сообщения перед загрузкой новых
         fetchMessages();
     }, [fetchMessages]);
 
-    // 🔹 Отправка сообщения
+    // 🔹 WebSocket подписка на новый чат
+    useEffect(() => {
+        if (!activeChatId) return;
+
+        WebSocketService.connect(() => {
+            WebSocketService.subscribeToChat(activeChatId, (newMessage) => {
+                setMessages(prev => [...prev, newMessage]); // ✅ Добавляем новое сообщение в список
+            });
+        });
+
+        return () => {
+            WebSocketService.unsubscribeFromChat(activeChatId);
+        };
+    }, [activeChatId]);
+
+    // 🔹 Функция отправки сообщения
     const sendMessage = () => {
         if (!newMessage.trim()) return;
 
         const messageData = {
             content: newMessage,
             roomId: activeChatId,
-            userId: userId || parseInt(localStorage.getItem("userId"), 10),
             timestamp: new Date().toISOString(),
+            userDTO: {
+                id: userId || parseInt(localStorage.getItem("userId"), 10), // ✅ Теперь id внутри userDTO
+            }
         };
+
 
         fetch("http://localhost:8080/api/messages/write", {
             method: "POST",
@@ -57,23 +77,16 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
         })
             .then(response => {
                 if (!response.ok) throw new Error(`Ошибка: ${response.status}`);
-
-                // Проверяем, является ли ответ JSON
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    return response.json(); // ✅ Если JSON — парсим
-                } else {
-                    return response.text(); // ❗ Иначе читаем как текст
-                }
+                return response.text();
             })
             .then(data => {
-                console.log("📩 Ответ сервера на отправку сообщения:", data);
+                console.log("📩 Сообщение отправлено:", data);
                 setNewMessage("");
-                fetchMessages(); // Обновляем чат после отправки
+
+                // ❌ НЕ вызываем `fetchMessages()`, т.к. WebSocket уже отправляет обновление
             })
             .catch(error => console.error("❌ Ошибка отправки сообщения:", error));
     };
-
 
     // 🔹 Удаление сообщения
     const deleteMessage = (messageId) => {
@@ -110,6 +123,11 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
 
         const updatedMessageData = {
             content: editedMessage,
+            roomId: activeChatId,
+            timestamp: new Date().toISOString(),
+            userDTO: {
+                id: userId || parseInt(localStorage.getItem("userId"), 10), // ✅ Теперь id внутри userDTO
+            }
         };
 
         fetch(`http://localhost:8080/api/messages/edit/${selectedMessage.id}`, {
@@ -139,6 +157,12 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
             .then(data => setUsers(data))
             .catch(error => console.error("❌ Ошибка загрузки участников:", error));
     };
+    useEffect(() => {
+        if (selectedMessage) {
+            setEditedMessage(selectedMessage.content); // ✅ Теперь при выборе сообщения текст заполняется
+        }
+    }, [selectedMessage]);
+
 
     // 🔹 Добавление участника
     const handleAddUser = () => {
@@ -158,6 +182,7 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
     };
 
     return (
+
         <div className="chat-container">
             {/* Хедер чата */}
             <div className="chat-header">
@@ -207,6 +232,7 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
                             value={editedMessage}
                             onChange={(e) => setEditedMessage(e.target.value)}
                         />
+
                         <button onClick={() => editMessage(selectedMessage.id)}>Сохранить</button>
                         <button onClick={() => {
                             if (selectedMessage && selectedMessage.id) {

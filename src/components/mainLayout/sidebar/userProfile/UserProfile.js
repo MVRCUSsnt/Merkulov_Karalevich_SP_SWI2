@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./UserProfile.css";
+import WebSocketService from "../../chatContainer/WebSocketService";
 
 const UserProfile = ({ onLogout, onClose }) => {
     const [user, setUser] = useState({
@@ -27,8 +28,9 @@ const UserProfile = ({ onLogout, onClose }) => {
         } catch (error) {
             console.error("Ошибка при выходе:", error);
         }
-
+        WebSocketService.disconnect();
         localStorage.removeItem("user");
+        localStorage.removeItem("userId");
         localStorage.removeItem("avatarUrl");
         localStorage.removeItem("email");
         setUser({ username: "Guest", avatarUrl: "/default-avatar.webp", email: "No email available" });

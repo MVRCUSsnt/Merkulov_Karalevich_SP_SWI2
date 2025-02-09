@@ -24,6 +24,7 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
         if (!storedUser || storedUser === "null" || storedUserId === "null") {
             localStorage.removeItem("user");
             localStorage.removeItem("userId");
+            localStorage.removeItem("email");
             localStorage.removeItem("avatarUrl");
             setIsProfileOpen(false);
             setIsLoggedIn(false);
@@ -95,6 +96,7 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
         // ❗ Очистка данных
         localStorage.removeItem("user");
         localStorage.removeItem("userId");
+        localStorage.removeItem("email");
         localStorage.removeItem("avatarUrl");
         setIsProfileOpen(false);
         setIsLoggedIn(false);
