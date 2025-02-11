@@ -79,8 +79,8 @@ public class MessageService {
     }
 
     private void setUserAndRoom(Message message, MessageDTO messageDTO) {
-        Users users = userRepository.findById(messageDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Sender not found with id: " + messageDTO.getUserId()));
+        Users users = userRepository.findById(messageDTO.getUserDTO().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sender not found with id: " + messageDTO.getMessageId()));
         message.setUsers(users);
 
         Room room = roomRepository.findById(messageDTO.getRoomId())

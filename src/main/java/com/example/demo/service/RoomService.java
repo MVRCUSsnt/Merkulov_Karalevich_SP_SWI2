@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.Room;
+import com.example.demo.dto.UserDTO;
 import com.example.demo.repositories.RoomRepository;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.Users;
@@ -9,9 +10,11 @@ import com.example.demo.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
@@ -23,7 +26,7 @@ public class RoomService {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
     }
-
+    @Transactional
     public void createRoom(RoomDTO roomDTO, String creatorUsername) {
         Users creator = userRepository.findByUsername(creatorUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + creatorUsername));
@@ -32,8 +35,14 @@ public class RoomService {
         room.setName(roomDTO.getName());
         room.setDescription(roomDTO.getDescription());
         room.setCreator(creator);
+
+        // Добавляем пользователя в комнату
         room.getUsers().add(creator);
+        creator.getRooms().add(room);
+
+        // Сохраняем данные
         roomRepository.save(room);
+        userRepository.save(creator);
     }
 
 
@@ -66,6 +75,26 @@ public class RoomService {
         roomRepository.deleteById(id);
     }
 
+    public List<UserDTO> getUsersInRoom(Long roomID, String username) {
+        // Получаем текущего пользователя
+        Users currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Получаем комнату по ID
+        Room room = roomRepository.findById(roomID)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
+
+        // Проверяем, состоит ли текущий пользователь в этой комнате
+        if (!room.getUsers().contains(currentUser)) {
+            throw new AccessDeniedException("You are not a member of this room");
+        }
+
+        // Преобразуем список пользователей комнаты в DTO
+        return room.getUsers().stream()
+                .map(user -> new UserDTO(user.getId(), user.getUsername(), user.getAvatarUrl()))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void addUserToRoom(Long roomId, Long userId, String creatorUsername) {
 
@@ -89,5 +118,6 @@ public class RoomService {
         roomRepository.save(room);
         userRepository.save(user);
     }
+
 
 }

@@ -1,9 +1,9 @@
 package com.example.demo.dto;
 
-public class UserDTO {
-    private Long id;
-    private String username;
-    private String avatarUrl;
+    public class UserDTO {
+        private Long id;
+        private String username;
+        private String avatarUrl;
 
     public UserDTO(Long id, String username, String avatarUrl) {
         this.id = id;
