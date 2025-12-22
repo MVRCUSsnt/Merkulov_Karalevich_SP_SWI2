@@ -201,7 +201,9 @@ const ChatContainer = ({ activeChatId, chatInfo, onChangeChat, userId }) => {
                             avatarUrl: message.userDTO?.avatarUrl || "/default-avatar.webp",
                         }}
                         timestamp={message.timestamp}
-                        isOwnMessage={message.userId === (userId || parseInt(localStorage.getItem("userId"), 10))}
+                        isOwnMessage={
+                            message.userDTO?.id === (userId || parseInt(localStorage.getItem("userId"), 10))
+                        }
                         onClick={() => {
                             console.log("🔹 Выбрано сообщение:", message); // ✅ Логируем, что передаем в `setSelectedMessage`
                             setSelectedMessage(message);

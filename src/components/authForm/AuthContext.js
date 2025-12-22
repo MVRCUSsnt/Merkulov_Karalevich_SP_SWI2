@@ -16,11 +16,12 @@ class AuthProvider extends Component {
             method: "GET",
             credentials: "include",
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Unauthorized");
-                }
-                return response.json();
+            .then((r) => {
+                if (!r.ok) throw new Error("Unauthorized");
+                return r.json();
+            })
+            .then((user) => {
+                this.setState({ user, loading: false });
             })
             .catch(() => {
                 this.setState({ user: null, loading: false });

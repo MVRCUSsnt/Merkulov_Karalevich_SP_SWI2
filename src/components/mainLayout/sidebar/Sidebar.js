@@ -17,6 +17,51 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
     const [isPersonal, setIsPersonal] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("user")); // Проверка авторизации
 
+    // ✅ Получение сообщений из очереди Kafka (для Main Room)
+    const fetchKafkaQueue = async () => {
+        try {
+            const res = await fetch("http://localhost:8080/api/queue/main?limit=50", {
+                method: "GET",
+                credentials: "include",
+            });
+
+            // если сервер вернул не json (маловероятно, но на всякий)
+            const text = await res.text();
+
+            if (!text) {
+                alert("Kafka queue: no new messages");
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                alert("Kafka queue: server returned invalid data");
+                return;
+            }
+
+            if (!Array.isArray(data) || data.length === 0) {
+                alert("Kafka queue: no new messages");
+                return;
+            }
+
+            alert("Kafka queue messages:\n\n" + data.join("\n"));
+
+
+            if (!Array.isArray(data) || data.length === 0) {
+                // Можно оставить тихо без alert, но для демо лучше показать
+                alert("Fronta (Kafka): нет новых сообщений ✅");
+                return;
+            }
+
+            alert("Fronta (Kafka) ✅\n\n" + data.join("\n"));
+        } catch (e) {
+            // Kafka может быть выключена — чат при этом должен работать
+            alert("Fronta (Kafka): не удалось получить сообщения (Kafka может быть выключена) ⚠️");
+        }
+    };
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         const storedUserId = localStorage.getItem("userId");
@@ -29,8 +74,16 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
             setIsProfileOpen(false);
             setIsLoggedIn(false);
         } else {
-            fetchGroupChats(); // 🔹 Загружаем чаты при входе
+            // Загружаем чаты при входе
+            fetchGroupChats();
+
+            // ✅ Автоподгрузка очереди после перезагрузки страницы (если уже залогинен)
+            // Небольшая задержка, чтобы cookie/сессия успели быть доступны (обычно не нужно, но безопасно)
+            setTimeout(() => {
+                fetchKafkaQueue();
+            }, 300);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchGroupChats = () => {
@@ -112,8 +165,8 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
         onSelectChat(1);
     };
 
-    // 🔹 Авторизация (вход)
-    const handleLogin = (userData) => {
+    // 🔹 Авторизация (вход) + ✅ автоподгрузка очереди
+    const handleLogin = async (userData) => {
         localStorage.setItem("user", userData.username);
         localStorage.setItem("userId", userData.id);
         localStorage.setItem("email", userData.email || "");
@@ -123,6 +176,9 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
         setIsProfileOpen(false); // ❗ Профиль НЕ открывается автоматически
         setFormType(null); // ❗ Закрываем окно логина
         fetchGroupChats(); // 🔹 Загружаем чаты после входа
+
+        // ✅ Автоподгрузка очереди Kafka сразу после входа
+        await fetchKafkaQueue();
     };
 
     return (
@@ -130,8 +186,15 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
             <button className="toggle-sidebar" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>☰</button>
 
             <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
-                <div className="profile-container" onClick={() => localStorage.getItem("user") ? setIsProfileOpen(!isProfileOpen) : setFormType("login")}>
-                    <img src={localStorage.getItem("avatarUrl") || "/default-avatar.webp"} alt="Avatar" className="profile-avatar" />
+                <div
+                    className="profile-container"
+                    onClick={() => localStorage.getItem("user") ? setIsProfileOpen(!isProfileOpen) : setFormType("login")}
+                >
+                    <img
+                        src={localStorage.getItem("avatarUrl") || "/default-avatar.webp"}
+                        alt="Avatar"
+                        className="profile-avatar"
+                    />
                     <div className="profile-name">{localStorage.getItem("user") || "Login"}</div>
                 </div>
 
@@ -162,8 +225,20 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
 
             {formType && (
                 <div className="auth-overlay">
-                    {formType === "login" && <Login onSubmit={handleLogin} onClose={() => setFormType(null)} onSwitch={() => setFormType("register")} />}
-                    {formType === "register" && <Registration onSubmit={handleLogin} onClose={() => setFormType(null)} onSwitch={() => setFormType("login")} />}
+                    {formType === "login" && (
+                        <Login
+                            onSubmit={handleLogin}
+                            onClose={() => setFormType(null)}
+                            onSwitch={() => setFormType("register")}
+                        />
+                    )}
+                    {formType === "register" && (
+                        <Registration
+                            onSubmit={handleLogin}
+                            onClose={() => setFormType(null)}
+                            onSwitch={() => setFormType("login")}
+                        />
+                    )}
                 </div>
             )}
         </>
