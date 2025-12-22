@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-ui.html").permitAll()
                         .requestMatchers("/api/private-messages").authenticated()
+                        .requestMatchers("/api/queue/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers
@@ -86,7 +87,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); // Разрешённые источники
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000")); // Разрешённые источники
         configuration.setAllowedHeaders(List.of("*")); // Разрешить все заголовки
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Разрешить все методы
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -34,7 +34,7 @@ public class AuthController {
         this.cookieService = cookieService;
     }
 
-    // 🔹 Авторизация и установка `HttpOnly` куки
+    //  Авторизация и установка `HttpOnly` куки
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest loginRequest, HttpServletResponse response) {
         // Аутентифицируем пользователя
@@ -57,7 +57,7 @@ public class AuthController {
     }
 
 
-    // 🔹 Регистрация нового пользователя и установка `HttpOnly` куки
+    // Регистрация нового пользователя и установка `HttpOnly` куки
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid UserRegistrationDTO userRegistrationDTO, HttpServletResponse response) {
         // Создание пользователя
@@ -78,7 +78,7 @@ public class AuthController {
     }
 
 
-    // 🔹 Проверка авторизации (`HttpOnly` куки) и получение текущего пользователя
+    // Проверка авторизации (`HttpOnly` куки) и получение текущего пользователя
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String token) {
         if (token == null || jwtUtil.isTokenExpired(token)) {
@@ -90,12 +90,12 @@ public class AuthController {
     }
 
 
-    // 🔹 Выход (удаление `HttpOnly` куки)
+    //  Выход (удаление `HttpOnly` куки)
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("accessToken", null);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(false);
         cookie.setPath("/");
         cookie.setMaxAge(0); // Удаляем куки
 
@@ -104,7 +104,7 @@ public class AuthController {
         return ResponseEntity.ok("Logged out");
     }
 
-    // 🔹 Получение информации о пользователе по ID
+    //  Получение информации о пользователе по ID
     @GetMapping("/{id}")
     public ResponseEntity<Users> getUserById(@PathVariable Long id) {
         Users user = userService.getUserById(id);
@@ -114,27 +114,27 @@ public class AuthController {
         return ResponseEntity.ok(user);
     }
 
-    // 🔹 Получение списка всех пользователей (с пагинацией)
+    //  Получение списка всех пользователей (с пагинацией)
     @GetMapping
     public ResponseEntity<List<Users>> getAllUsers(@RequestParam(defaultValue = "0") int page,
                                                    @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(userService.getAllUsers(page, size));
     }
 
-    // 🔹 Обновление профиля пользователя
+    //  Обновление профиля пользователя
     @PutMapping("/{id}")
     public ResponseEntity<Users> updateUser(@PathVariable Long id, @RequestBody @Valid UserRegistrationDTO userRegistrationDTO) {
         return ResponseEntity.ok(userService.updateUser(id, userRegistrationDTO));
     }
 
-    // 🔹 Удаление пользователя
+    //  Удаление пользователя
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
-    // 🔹 Получение профиля текущего пользователя
+    //  Получение профиля текущего пользователя
     @GetMapping("/profile")
     public ResponseEntity<Users> getProfile(@CookieValue(value = "accessToken", required = false) String token) {
         if (token == null || jwtUtil.isTokenExpired(token)) {
