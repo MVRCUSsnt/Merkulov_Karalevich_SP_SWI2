@@ -15,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.util.Objects;
 
 @Component
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
@@ -43,9 +42,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             String token = authHeader.substring(7);
 
             try {
-                String username = jwtUtil.extractUsername(token);
-
-                if (username == null || !(Objects.equals(jwtUtil.validateToken(token), "Invalid token"))) {
+                String username = jwtUtil.validateToken(token);
+                if (username == null) {
                     throw new IllegalArgumentException("❌ WebSocket: Invalid JWT token");
                 }
 
