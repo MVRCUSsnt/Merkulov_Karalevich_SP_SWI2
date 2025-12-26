@@ -86,8 +86,18 @@ public class AuthController {
         }
 
         String username = jwtUtil.extractUsername(token);
-        return ResponseEntity.ok(username);
+        Users user = userService.getUserByUsername(username);
+
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("id", user.getId());
+        responseBody.put("username", user.getUsername());
+        responseBody.put("avatarUrl", user.getAvatarUrl());
+        responseBody.put("email", user.getEmail());
+
+        return ResponseEntity.ok(responseBody);
     }
+
+
 
 
     //  Выход (удаление `HttpOnly` куки)

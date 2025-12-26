@@ -146,6 +146,7 @@ public class MessageController {
                 message.getRoom().getId(),
                 message.getContent(),
                 message.getTimestamp().toString(), // toString() для LocalDateTime работает корректно
+                message.getUsers().getId(),
                 new UserDTO(
                         message.getUsers().getId(),
                         message.getUsers().getUsername(),

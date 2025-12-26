@@ -27,7 +27,7 @@ public class RoomService {
         this.userRepository = userRepository;
     }
     @Transactional
-    public void createRoom(RoomDTO roomDTO, String creatorUsername) {
+    public Room createRoom(RoomDTO roomDTO, String creatorUsername) {
         Users creator = userRepository.findByUsername(creatorUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + creatorUsername));
 
@@ -40,9 +40,9 @@ public class RoomService {
         room.getUsers().add(creator);
         creator.getRooms().add(room);
 
-        // Сохраняем данные
-        roomRepository.save(room);
+        Room savedRoom = roomRepository.save(room);
         userRepository.save(creator);
+        return savedRoom;
     }
 
 

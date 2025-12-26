@@ -1,19 +1,22 @@
 package com.example.demo.dto;
 
 public class MessageDTO {
-        private Long messageId;
-        private Long roomId;
-        private String content;
+    private Long messageId;
+    private Long roomId;
+    private String content;
 
-        private String timestamp;
+    private String timestamp;
 
-        private UserDTO userDTO;
+    private Long userId;
 
-    public MessageDTO(Long messageId, Long roomId, String content, String timestamp, UserDTO userDTO) {
+    private UserDTO userDTO;
+
+    public MessageDTO(Long messageId, Long roomId, String content, String timestamp, Long userId, UserDTO userDTO) {
         this.messageId = messageId;
         this.roomId = roomId;
         this.content = content;
         this.timestamp = timestamp;
+        this.userId = userId;
         this.userDTO = userDTO;
     }
 
@@ -47,6 +50,14 @@ public class MessageDTO {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public UserDTO getUserDTO() {

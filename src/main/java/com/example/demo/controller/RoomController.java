@@ -40,8 +40,9 @@ public class RoomController {
 
     @PostMapping("/create")
     public ResponseEntity<RoomDTO> createRoom(@RequestBody RoomDTO roomDTO, Principal principal) {
-            roomService.createRoom(roomDTO, principal.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(roomDTO);
+        Room createdRoom = roomService.createRoom(roomDTO, principal.getName());
+        RoomDTO response = new RoomDTO(createdRoom.getId(), createdRoom.getName(), createdRoom.getDescription());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{roomID}/users")

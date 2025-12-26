@@ -36,7 +36,11 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             String authHeader = accessor.getFirstNativeHeader("Authorization");
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("❌ WebSocket: Missing or invalid Authorization header");
+                authHeader = extractTokenFromCookie(accessor);
+            }
+
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("WebSocket: Missing or invalid Authorization header");
             }
 
             String token = authHeader.substring(7);
@@ -49,7 +53,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 accessor.setUser(authentication);
             } catch (Exception e) {
@@ -58,5 +61,24 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         }
 
         return message;
+    }
+
+    private String extractTokenFromCookie(StompHeaderAccessor accessor) {
+        String cookieHeader = accessor.getFirstNativeHeader("Cookie");
+        if (cookieHeader == null) {
+            cookieHeader = accessor.getFirstNativeHeader("cookie");
+        }
+        if (cookieHeader == null) {
+            return null;
+        }
+
+        String[] cookies = cookieHeader.split(";");
+        for (String cookie : cookies) {
+            String[] parts = cookie.trim().split("=", 2);
+            if (parts.length == 2 && "accessToken".equals(parts[0])) {
+                return "Bearer " + parts[1];
+            }
+        }
+        return null;
     }
 }
