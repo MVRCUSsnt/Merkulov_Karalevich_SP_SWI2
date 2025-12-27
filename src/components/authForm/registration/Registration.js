@@ -1,27 +1,29 @@
 import React, { useState } from "react";
 import "./Registration.css";
+import { apiFetch } from "../../../api/client";
+import { useNotify } from "../../common/NotificationContext";
 
 const Registration = ({ onSubmit, onClose, onSwitch }) => {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const { notify } = useNotify();
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        fetch("http://localhost:8080/api/auth/register", {
+        apiFetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, email, password }),
-            credentials: "include",
-        })
-            .then((response) => response.json())
+        }, { parse: "json" })
             .then((data) => {
                 localStorage.setItem("user", data.username);
                 localStorage.setItem("userId", data.id);
                 onSubmit(data);
             })
-            .catch(() => alert("Register failed! Please try again."));
+            .catch(() => notify("Register failed! Please try again", "error"));
+
     };
 
     return (

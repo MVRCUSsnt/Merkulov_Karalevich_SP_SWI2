@@ -4,20 +4,24 @@ import Login from "../../authForm/login/Login";
 import Registration from "../../authForm/registration/Registration";
 import UserProfile from "./userProfile/UserProfile";
 import ChatList from "./сhatList/ChatList";
+import { apiFetch } from "../../../api/client";
+import { useNotify } from "../../common/NotificationContext";
+import { clearSession } from "../../../utils/session";
 
 const Sidebar = ({ activeChatId, onSelectChat }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [formType, setFormType] = useState(null);
     const [personalChats, setPersonalChats] = useState([]);
-    const [groupChats, setGroupChats] = useState([{ id: 1, name: "Main Room", description: "Основная комната" }]);
+    const [groupChats, setGroupChats] = useState([{ id: 1, name: "Main Room", description: "Main Room" }]);
     const [isGroupsLoaded, setIsGroupsLoaded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isPersonal, setIsPersonal] = useState(true);
-    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("user")); // Проверка авторизации
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("user"));
+    const { notify } = useNotify();
 
-    // ✅ Получение сообщений из очереди Kafka (для Main Room)
+    // Kafka Queue Logic (Restored and Translated)
     const fetchKafkaQueue = async () => {
         try {
             const res = await fetch("http://localhost:8080/api/queue/main?limit=50", {
@@ -25,40 +29,28 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
                 credentials: "include",
             });
 
-            // если сервер вернул не json (маловероятно, но на всякий)
             const text = await res.text();
 
-            if (!text) {
-                alert("Kafka queue: no new messages");
-                return;
-            }
+            if (!text) return;
 
             let data;
             try {
                 data = JSON.parse(text);
             } catch (e) {
-                alert("Kafka queue: server returned invalid data");
+                console.error("Kafka queue parse error");
                 return;
             }
 
             if (!Array.isArray(data) || data.length === 0) {
-                alert("Kafka queue: no new messages");
+                // Uncomment the line below if you want an alert even when empty
+                // alert("Kafka queue: no new messages");
                 return;
             }
 
             alert("Kafka queue messages:\n\n" + data.join("\n"));
 
-
-            if (!Array.isArray(data) || data.length === 0) {
-                // Можно оставить тихо без alert, но для демо лучше показать
-                alert("Fronta (Kafka): нет новых сообщений ✅");
-                return;
-            }
-
-            alert("Fronta (Kafka) ✅\n\n" + data.join("\n"));
         } catch (e) {
-            // Kafka может быть выключена — чат при этом должен работать
-            alert("Fronta (Kafka): не удалось получить сообщения (Kafka может быть выключена) ⚠️");
+            console.warn("Kafka queue fetch failed (service might be down)");
         }
     };
 
@@ -71,14 +63,13 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
             localStorage.removeItem("userId");
             localStorage.removeItem("email");
             localStorage.removeItem("avatarUrl");
+            clearSession();
             setIsProfileOpen(false);
             setIsLoggedIn(false);
         } else {
-            // Загружаем чаты при входе
             fetchGroupChats();
 
-            // ✅ Автоподгрузка очереди после перезагрузки страницы (если уже залогинен)
-            // Небольшая задержка, чтобы cookie/сессия успели быть доступны (обычно не нужно, но безопасно)
+            // Call Kafka check slightly after load
             setTimeout(() => {
                 fetchKafkaQueue();
             }, 300);
@@ -90,82 +81,73 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
         if (isGroupsLoaded) return;
 
         setLoading(true);
-        fetch("http://localhost:8080/api/rooms/my-rooms?page=0&size=10", {
-            method: "GET",
-            credentials: "include",
-        })
-            .then(response => response.json())
+        apiFetch("/api/rooms/my-rooms?page=0&size=10", { method: "GET" }, { parse: "json" })
             .then(data => {
-                // ✅ Удаляем дубликаты
-                const uniqueChats = [...new Map(data.map(chat => [chat.id, chat])).values()];
+                const rooms = Array.isArray(data) ? data : [];
 
-                // ✅ Добавляем "Main Room" только если его нет в списке
+                const uniqueChats = [...new Map(rooms.map(chat => [chat.id, chat])).values()];
+
                 const updatedChats = uniqueChats.some(chat => chat.id === 1)
                     ? uniqueChats
-                    : [{ id: 1, name: "Main Room", description: "Основная комната" }, ...uniqueChats];
+                    : [{ id: 1, name: "Main Room", description: "Main Room" }, ...uniqueChats];
 
                 setGroupChats(updatedChats);
                 setIsGroupsLoaded(true);
             })
-            .catch(error => setError(error.message))
+            .catch(error => {
+                setError(error.message);
+                notify("Failed to load chat list.", "error");
+            })
             .finally(() => setLoading(false));
     };
 
     const handleAddGroupChat = () => {
-        const groupName = prompt("Введите название новой группы:");
+        const groupName = prompt("Enter new group name:");
         if (!groupName) return;
 
-        const groupDescription = prompt("Введите описание новой группы:");
+        const groupDescription = prompt("Enter new group description:");
 
         const newRoom = {
             name: groupName,
-            description: groupDescription || "Описание отсутствует",
+            description: groupDescription || "No description",
         };
 
-        fetch("http://localhost:8080/api/rooms/create", {
+        apiFetch("/api/rooms/create", {
             method: "POST",
-            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newRoom),
-        })
-            .then(response => response.json())
+        }, { parse: "json" })
             .then(createdRoom => {
-                setGroupChats(prev => [...prev, createdRoom]); // Добавляем новый чат в список
+                setGroupChats(prev => [...prev, createdRoom]);
+                notify("Group chat created successfully.", "success");
             })
-            .catch(error => alert(`Ошибка: ${error.message}`));
+            .catch(error => notify(`Error creating chat: ${error.message}`, "error"));
     };
 
-    // 🔹 Логаут: Очистка чатов, удаление данных пользователя, рендер Main Room
     const handleLogout = async () => {
         try {
-            await fetch("http://localhost:8080/api/auth/logout", {
-                method: "POST",
-                credentials: "include",
-            });
+            await apiFetch("/api/auth/logout", { method: "POST" }, { parse: "none" });
         } catch (error) {
-            console.error("Ошибка при выходе:", error);
+            console.error("Logout error:", error);
+            notify("Failed to end session. Please try again.", "warning");
         }
 
-        // ❗ Очистка данных
         localStorage.removeItem("user");
         localStorage.removeItem("userId");
         localStorage.removeItem("email");
         localStorage.removeItem("avatarUrl");
+        clearSession();
         setIsProfileOpen(false);
         setIsLoggedIn(false);
 
-        // ❗ Очищаем список чатов
         setPersonalChats([]);
-        setGroupChats([{ id: 1, name: "Main Room", description: "Основная комната" }]);
+        setGroupChats([{ id: 1, name: "Main Room", description: "Main Room" }]);
 
-        // ❗ Обновляем UI
         setIsGroupsLoaded(false);
 
-        // ❗ Автоматически рендерим Main Room (ID 1)
         onSelectChat(1);
     };
 
-    // 🔹 Авторизация (вход) + ✅ автоподгрузка очереди
     const handleLogin = async (userData) => {
         localStorage.setItem("user", userData.username);
         localStorage.setItem("userId", userData.id);
@@ -173,11 +155,11 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
         localStorage.setItem("avatarUrl", userData.avatarUrl || "/default-avatar.webp");
 
         setIsLoggedIn(true);
-        setIsProfileOpen(false); // ❗ Профиль НЕ открывается автоматически
-        setFormType(null); // ❗ Закрываем окно логина
-        fetchGroupChats(); // 🔹 Загружаем чаты после входа
+        setIsProfileOpen(false);
+        setFormType(null);
+        fetchGroupChats();
 
-        // ✅ Автоподгрузка очереди Kafka сразу после входа
+        // Check Kafka after login
         await fetchKafkaQueue();
     };
 
@@ -208,16 +190,16 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
                         setIsPersonal(value);
                         if (!value) fetchGroupChats();
                     }}
-                    onAddGroupChat={handleAddGroupChat} // ❗ Кнопка "+" теперь всегда доступна
+                    onAddGroupChat={handleAddGroupChat}
                 />
 
-                {loading && <p>Загрузка...</p>}
+                {loading && <p>Loading...</p>}
                 {error && <p className="error">{error}</p>}
             </div>
 
             {isProfileOpen && localStorage.getItem("user") && (
                 <UserProfile
-                    onLogout={handleLogout} // Передаем логаут
+                    onLogout={handleLogout}
                     onClose={() => setIsProfileOpen(false)}
                     username={localStorage.getItem("user")}
                 />

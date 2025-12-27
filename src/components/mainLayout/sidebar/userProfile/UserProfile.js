@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./UserProfile.css";
 import WebSocketService from "../../chatContainer/WebSocketService";
+import { apiFetch } from "../../../../api/client";
+import { useNotify } from "../../../common/NotificationContext";
+import { clearSession } from "../../../../utils/session";
 
 const UserProfile = ({ onLogout, onClose }) => {
     const [user, setUser] = useState({
@@ -8,6 +11,7 @@ const UserProfile = ({ onLogout, onClose }) => {
         avatarUrl: localStorage.getItem("avatarUrl") || "/default-avatar.webp",
         email: localStorage.getItem("email") || "No email available"
     });
+    const { notify } = useNotify();
 
     useEffect(() => {
         const handleStorageChange = () => {
@@ -24,30 +28,27 @@ const UserProfile = ({ onLogout, onClose }) => {
 
     const handleLogout = async () => {
         try {
-            await fetch("http://localhost:8080/api/auth/logout", { method: "POST", credentials: "include" });
+            await apiFetch("/api/auth/logout", { method: "POST" }, { parse: "none" });
         } catch (error) {
-            console.error("Ошибка при выходе:", error);
+            notify("Failed to end session. Please try again.", "warning");
         }
         WebSocketService.disconnect();
-        localStorage.removeItem("user");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("avatarUrl");
-        localStorage.removeItem("email");
+        clearSession();
         setUser({ username: "Guest", avatarUrl: "/default-avatar.webp", email: "No email available" });
         onLogout();
     };
 
     return (
         <div className="user-profile">
-            <button className="close-btn" onClick={onClose}>✖</button>
+            <button className="close-btn" onClick={onClose}>x</button>
             <div className="profile-header">
                 <img src={user.avatarUrl} alt="User Avatar" className="profile-avatar" />
                 <h2>{user.username}</h2>
                 <p>{user.email}</p>
             </div>
             <div className="profile-actions">
-                <button className="profile-btn">Настройки</button>
-                <button className="logout-btn" onClick={handleLogout}>Выход</button>
+                <button className="profile-btn">Settings</button>
+                <button className="logout-btn" onClick={handleLogout}>Logout</button>
             </div>
         </div>
     );

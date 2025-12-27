@@ -2,37 +2,37 @@ import React from "react";
 import "./ChatList.css";
 
 const ChatList = ({ personalChats = [], groupChats = [], activeChatId, onSelectChat, isPersonal, setIsPersonal, onAddGroupChat }) => {
-    console.log("📌 Переключение вкладок:");
-    console.log("🔹 Личные сообщения?", isPersonal);
-    console.log("🔹 Список личных чатов:", personalChats);
-    console.log("🔹 Список групповых чатов:", groupChats);
+
+    const currentList = isPersonal ? personalChats : groupChats;
 
     return (
         <div className="chat-list-container">
             <div className="chat-toggle-buttons">
                 <button className={isPersonal ? "active" : ""} onClick={() => setIsPersonal(true)}>
-                    Личные сообщения
+                    Direct Messages
                 </button>
                 <button className={!isPersonal ? "active" : ""} onClick={() => setIsPersonal(false)}>
-                    Группы
+                    Groups
                 </button>
             </div>
 
             <div className="group-section">
                 <ul className="chat-list">
-                    {(isPersonal ? personalChats : groupChats).map((chat) => {
-                        console.log(`📝 Отображение чата: ID ${chat.id}, Название: ${chat.name}`);
+                    {currentList.length === 0 && (
+                        <li className="empty-chat-list">No chats available</li>
+                    )}
+                    {currentList.map((chat) => {
+                        const chatName = chat?.name || "Untitled";
                         return (
                             <li
-                                key={chat.id}
+                                key={chat.id ?? chatName}
                                 className={chat.id === activeChatId ? "active" : ""}
                                 onClick={() => {
-                                    console.log(`📌 Выбран чат: ${chat.id}`);
-                                    onSelectChat(chat.id);
+                                    if (chat?.id) onSelectChat(chat.id);
                                 }}
                             >
                                 <div className="chat-item">
-                                    <span className="chat-name">{chat.name}</span>
+                                    <span className="chat-name">{chatName}</span>
                                 </div>
                             </li>
                         );

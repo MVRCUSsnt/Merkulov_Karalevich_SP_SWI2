@@ -1,80 +1,81 @@
 import SockJS from "sockjs-client";
-import {Client} from "@stomp/stompjs";
+import { Client } from "@stomp/stompjs";
+import { getWsUrl } from "../../../api/client";
 
-const SOCKET_URL = "http://localhost:8080/ws";
+const SOCKET_URL = getWsUrl();
 
 class WebSocketService {
     constructor() {
         this.client = null;
         this.subscriptions = {};
-        this.isConnected = false; // ✅ Флаг подключения
-        this.pendingSubscriptions = []; // ✅ Очередь подписок, которые ждут подключения
+        this.isConnected = false;
+        this.pendingSubscriptions = [];
     }
 
     connect(onConnectCallback, onErrorCallback) {
         if (this.client && this.isConnected) {
-            console.log("✅ WebSocket уже подключен");
+            console.log("WebSocket already connected");
             if (onConnectCallback) onConnectCallback();
             return;
         }
 
-        console.log("🔄 Opening Web Socket...");
+        console.log("Opening Web Socket...");
         const socket = new SockJS(SOCKET_URL);
         this.client = new Client({
             webSocketFactory: () => socket,
-            reconnectDelay: 5000, // ✅ Авто-переподключение
+            reconnectDelay: 5000,
             debug: (str) => console.log(str),
             onConnect: () => {
-                console.log("✅ WebSocket подключен");
+                console.log("WebSocket connected");
                 this.isConnected = true;
 
-                // ✅ Выполняем все подписки, которые ждали подключения
+                // Process pending subscriptions
                 this.pendingSubscriptions.forEach(({ chatId, callback }) => {
                     this.subscribeToChat(chatId, callback);
                 });
-                this.pendingSubscriptions = []; // Очищаем очередь
+                this.pendingSubscriptions = [];
 
                 if (onConnectCallback) onConnectCallback();
             },
             onDisconnect: () => {
-                console.warn("❌ WebSocket отключен");
+                console.warn("WebSocket disconnected");
                 this.isConnected = false;
             },
             onStompError: (frame) => {
-                console.error("❌ Ошибка STOMP:", frame);
+                console.error("STOMP Error:", frame);
                 this.isConnected = false;
                 if (onErrorCallback) onErrorCallback(frame);
             }
         });
 
-        this.client.activate(); // ✅ Запускаем WebSocket
+        this.client.activate();
     }
 
     subscribeToChat(chatId, onMessageReceived) {
         if (!this.client || !this.isConnected) {
-            console.warn(`⚠️ WebSocket ещё не подключен, подписка отложена: ${chatId}`);
-            this.pendingSubscriptions.push({ chatId, callback: onMessageReceived }); // ✅ Откладываем подписку
+            console.warn(`WebSocket not connected yet, subscription deferred: ${chatId}`);
+            this.pendingSubscriptions.push({ chatId, callback: onMessageReceived });
             return;
         }
 
         if (this.subscriptions[chatId]) {
-            console.warn(`⚠️ Уже подписаны на ${chatId}`);
+            console.warn(`Already subscribed to ${chatId}`);
             return;
         }
 
         this.subscriptions[chatId] = this.client.subscribe(`/topic/messages/${chatId}`, (message) => {
             const newMessage = JSON.parse(message.body);
-            console.log("📨 Новое сообщение:", newMessage);
+            console.log("New message:", newMessage);
             onMessageReceived(newMessage);
         });
-        console.log(`🔔 Подписка на чат ${chatId}`);
+        console.log(`Subscribed to chat ${chatId}`);
     }
 
     unsubscribeFromChat(chatId) {
         if (this.subscriptions[chatId]) {
             this.subscriptions[chatId].unsubscribe();
             delete this.subscriptions[chatId];
-            console.log(`🔕 Отписка от чата ${chatId}`);
+            console.log(`Unsubscribed from chat ${chatId}`);
         }
     }
 
@@ -86,7 +87,7 @@ class WebSocketService {
 
             this.client.deactivate();
             this.isConnected = false;
-            console.log("🔌 WebSocket отключен");
+            console.log("WebSocket disconnected");
         }
     }
 }

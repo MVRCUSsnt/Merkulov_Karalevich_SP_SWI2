@@ -48,7 +48,12 @@
 .chat-messages::-webkit-scrollbar {
     display: none;
 }
-
+.chat-empty {
+    text-align: center;
+    color: #b0b0b0;
+    font-style: italic;
+    padding: 20px 0;
+}
 /* Поле ввода */
 .chat-input {
     display: flex;

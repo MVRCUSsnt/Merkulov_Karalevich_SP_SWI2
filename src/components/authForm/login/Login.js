@@ -1,25 +1,21 @@
 import React, { useState } from "react";
 import "./Login.css";
+import { apiFetch } from "../../../api/client";
+import { useNotify } from "../../common/NotificationContext";
 
 const Login = ({ onSubmit, onClose, onSwitch }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const { notify } = useNotify();
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        fetch("http://localhost:8080/api/auth/login", {
+        apiFetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
-            credentials: "include",
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Login failed");
-                }
-                return response.json();
-            })
+        }, { parse: "json" })
             .then((data) => {
                 localStorage.setItem("user", data.username);
                 localStorage.setItem("userId", data.id);
@@ -27,9 +23,8 @@ const Login = ({ onSubmit, onClose, onSwitch }) => {
                 localStorage.setItem("avatarUrl", data.avatarUrl || "/default-avatar.webp");
                 onSubmit(data);
             })
-            .catch(() => alert("Login failed!"));
+            .catch(() => notify("Login failed. Please check your username and password.", "error"));
     };
-
     return (
         <div className="auth-form-container">
             <h2 className="auth-form-title">Login</h2>

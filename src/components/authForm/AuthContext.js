@@ -1,4 +1,6 @@
 import React, { createContext, Component } from "react";
+import { apiFetch } from "../../api/client";
+import { clearSession } from "../../utils/session";
 
 const AuthContext = createContext(null);
 
@@ -12,23 +14,16 @@ class AuthProvider extends Component {
     }
 
     componentDidMount() {
-        fetch("http://localhost:8080/api/auth/me", {
-            method: "GET",
-            credentials: "include",
-        })
-            .then((r) => {
-                if (!r.ok) throw new Error("Unauthorized");
-                return r.json();
+        apiFetch("/api/auth/me", { method: "GET" }, { parse: "json" })
+            .then((data) => {
+                this.setState({ user: data, loading: false });
             })
             .then((user) => {
                 this.setState({ user, loading: false });
             })
             .catch(() => {
                 this.setState({ user: null, loading: false });
-                localStorage.removeItem("user");
-                localStorage.removeItem("avatarUrl");
-                localStorage.removeItem("email");
-                localStorage.removeItem("userId");
+                clearSession();
             });
     }
 

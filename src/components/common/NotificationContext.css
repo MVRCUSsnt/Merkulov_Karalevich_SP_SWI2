@@ -1,0 +1,31 @@
+.notification-banner {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d2d2d;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    z-index: 1000;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.notification-banner.warning {
+    background: #9c6f00;
+}
+
+.notification-banner.success {
+    background: #1f7a3f;
+}
+
+.notification-close {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 18px;
+    cursor: pointer;
+}
