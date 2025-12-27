@@ -1,7 +1,16 @@
 import React from "react";
 import "./ChatList.css";
 
-const ChatList = ({ personalChats = [], groupChats = [], activeChatId, onSelectChat, isPersonal, setIsPersonal, onAddGroupChat }) => {
+const ChatList = ({
+                      personalChats = [],
+                      groupChats = [],
+                      activeChat,
+                      onSelectChat,
+                      isPersonal,
+                      setIsPersonal,
+                      onAddGroupChat,
+                      onAddDirectChat
+                  }) => {
 
     const currentList = isPersonal ? personalChats : groupChats;
 
@@ -26,9 +35,9 @@ const ChatList = ({ personalChats = [], groupChats = [], activeChatId, onSelectC
                         return (
                             <li
                                 key={chat.id ?? chatName}
-                                className={chat.id === activeChatId ? "active" : ""}
+                                className={chat.id === activeChat?.id ? "active" : ""}
                                 onClick={() => {
-                                    if (chat?.id) onSelectChat(chat.id);
+                                    if (chat?.id) onSelectChat(chat);
                                 }}
                             >
                                 <div className="chat-item">
@@ -38,6 +47,10 @@ const ChatList = ({ personalChats = [], groupChats = [], activeChatId, onSelectC
                         );
                     })}
                 </ul>
+
+                {isPersonal && (
+                    <button className="add-group-chat" onClick={onAddDirectChat}>+</button>
+                )}
 
                 {!isPersonal && (
                     <button className="add-group-chat" onClick={onAddGroupChat}>+</button>

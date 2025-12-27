@@ -30,7 +30,11 @@ class WebSocketService {
                 this.isConnected = true;
 
                 // Process pending subscriptions
-                this.pendingSubscriptions.forEach(({ chatId, callback }) => {
+                this.pendingSubscriptions.forEach(({ chatId, callback, type }) => {
+                    if (type === "private") {
+                        this.subscribeToPrivateMessages(callback);
+                        return;
+                    }
                     this.subscribeToChat(chatId, callback);
                 });
                 this.pendingSubscriptions = [];
@@ -54,7 +58,7 @@ class WebSocketService {
     subscribeToChat(chatId, onMessageReceived) {
         if (!this.client || !this.isConnected) {
             console.warn(`WebSocket not connected yet, subscription deferred: ${chatId}`);
-            this.pendingSubscriptions.push({ chatId, callback: onMessageReceived });
+            this.pendingSubscriptions.push({ chatId, callback: onMessageReceived, type: "group" });
             return;
         }
 
@@ -71,11 +75,41 @@ class WebSocketService {
         console.log(`Subscribed to chat ${chatId}`);
     }
 
+    subscribeToPrivateMessages(onMessageReceived) {
+        const key = "private";
+        if (!this.client || !this.isConnected) {
+            console.warn("WebSocket not connected yet, private subscription deferred");
+            this.pendingSubscriptions.push({ chatId: key, callback: onMessageReceived, type: "private" });
+            return;
+        }
+
+        if (this.subscriptions[key]) {
+            console.warn("Already subscribed to private messages");
+            return;
+        }
+
+        this.subscriptions[key] = this.client.subscribe("/user/queue/messages", (message) => {
+            const newMessage = JSON.parse(message.body);
+            console.log("New private message:", newMessage);
+            onMessageReceived(newMessage);
+        });
+        console.log("Subscribed to private messages");
+    }
+
     unsubscribeFromChat(chatId) {
         if (this.subscriptions[chatId]) {
             this.subscriptions[chatId].unsubscribe();
             delete this.subscriptions[chatId];
             console.log(`Unsubscribed from chat ${chatId}`);
+        }
+    }
+
+    unsubscribeFromPrivateMessages() {
+        const key = "private";
+        if (this.subscriptions[key]) {
+            this.subscriptions[key].unsubscribe();
+            delete this.subscriptions[key];
+            console.log("Unsubscribed from private messages");
         }
     }
 

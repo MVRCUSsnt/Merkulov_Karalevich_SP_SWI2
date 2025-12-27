@@ -8,12 +8,12 @@ import { apiFetch } from "../../../api/client";
 import { useNotify } from "../../common/NotificationContext";
 import { clearSession } from "../../../utils/session";
 
-const Sidebar = ({ activeChatId, onSelectChat }) => {
+const Sidebar = ({ activeChat, onSelectChat, defaultChat }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [formType, setFormType] = useState(null);
     const [personalChats, setPersonalChats] = useState([]);
-    const [groupChats, setGroupChats] = useState([{ id: 1, name: "Main Room", description: "Main Room" }]);
+    const [groupChats, setGroupChats] = useState([{ id: 1, name: "Main Room", description: "Main Room", type: "group" }]);
     const [isGroupsLoaded, setIsGroupsLoaded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -72,9 +72,9 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
 
                 const updatedChats = uniqueChats.some(chat => chat.id === 1)
                     ? uniqueChats
-                    : [{ id: 1, name: "Main Room", description: "Main Room" }, ...uniqueChats];
+            : [{ id: 1, name: "Main Room", description: "Main Room", type: "group" }, ...uniqueChats];
 
-                setGroupChats(updatedChats);
+                setGroupChats(updatedChats.map((chat) => ({ ...chat, type: "group" })));
                 setIsGroupsLoaded(true);
             })
             .catch(error => {
@@ -99,12 +99,34 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newRoom),
-        }, { parse: "json" })
-            .then(createdRoom => {
-                setGroupChats(prev => [...prev, createdRoom]);
-                notify("Group chat created successfully.", "success");
-            })
+    }, { parse: "json" })
+    .then(createdRoom => {
+                setGroupChats(prev => [...prev, { ...createdRoom, type: "group" }]);
+            notify("Group chat created successfully.", "success");
+        })
             .catch(error => notify(`Error creating chat: ${error.message}`, "error"));
+    };
+
+    const handleAddDirectChat = () => {
+        const recipientId = prompt("Enter recipient user ID:");
+        if (!recipientId) return;
+
+        const recipientUsername = prompt("Enter recipient username:");
+        if (!recipientUsername) return;
+
+        const newChat = {
+            id: `dm-${recipientId}`,
+            name: recipientUsername,
+            type: "private",
+            recipientId: Number(recipientId),
+            recipientUsername,
+        };
+
+        setPersonalChats((prev) => {
+            if (prev.some((chat) => chat.recipientId === newChat.recipientId)) return prev;
+            return [...prev, newChat];
+        });
+        onSelectChat(newChat);
     };
 
     const handleLogout = async () => {
@@ -124,11 +146,11 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
         setIsLoggedIn(false);
 
         setPersonalChats([]);
-        setGroupChats([{ id: 1, name: "Main Room", description: "Main Room" }]);
+        setGroupChats([{ id: 1, name: "Main Room", description: "Main Room", type: "group" }]);
 
         setIsGroupsLoaded(false);
 
-        onSelectChat(1);
+        onSelectChat(defaultChat);
     };
 
     const handleLogin = async (userData) => {
@@ -166,7 +188,7 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
                 <ChatList
                     personalChats={personalChats}
                     groupChats={groupChats}
-                    activeChatId={activeChatId}
+                    activeChat={activeChat}
                     onSelectChat={onSelectChat}
                     isPersonal={isPersonal}
                     setIsPersonal={(value) => {
@@ -174,6 +196,7 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
                         if (!value) fetchGroupChats();
                     }}
                     onAddGroupChat={handleAddGroupChat}
+                    onAddDirectChat={handleAddDirectChat}
                 />
 
                 {loading && <p>Loading...</p>}

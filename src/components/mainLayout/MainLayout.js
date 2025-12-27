@@ -3,13 +3,15 @@ import Sidebar from "./sidebar/Sidebar";
 import ChatContainer from "./chatContainer/ChatContainer";
 import "./MainLayout.css"; // CSS для макета
 
+const defaultChat = { id: 1, name: "Main Room", description: "Main Room", type: "group" };
+
 const MainLayout = () => {
-    const [activeChatId, setActiveChatId] = useState(1); // Храним ID активного чата
+    const [activeChat, setActiveChat] = useState(defaultChat);
 
     return (
         <div className="main-layout">
-            <Sidebar activeChatId={activeChatId} onSelectChat={setActiveChatId} />
-            <ChatContainer activeChatId={activeChatId} onChangeChat={setActiveChatId} />
+            <Sidebar activeChat={activeChat} onSelectChat={setActiveChat} defaultChat={defaultChat} />
+            <ChatContainer activeChat={activeChat} />
         </div>
     );
 };
