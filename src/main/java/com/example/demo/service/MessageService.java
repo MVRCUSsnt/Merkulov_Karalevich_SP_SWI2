@@ -103,10 +103,9 @@ public class MessageService {
     }
 
 
-    public void sendPrivateMessage(PrivateMessageDTO messageDTO, String senderUsername) {
+    public PrivateMessageDTO sendPrivateMessage(PrivateMessageDTO messageDTO, String senderUsername) {
         Users sender = userRepository.findByUsername(senderUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
-
         Users recipient = userRepository.findById(messageDTO.getRecipientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
 
@@ -120,6 +119,14 @@ public class MessageService {
         // Отправляем WebSocket-сообщение конкретному получателю
         messagingTemplate.convertAndSendToUser(
                 recipient.getUsername(), "/queue/messages", message
+        );
+
+        return new PrivateMessageDTO(
+                recipient.getId(),
+                sender.getUsername(),
+                recipient.getUsername(),
+                message.getContent(),
+                message.getTimestamp().toString()
         );
     }
 

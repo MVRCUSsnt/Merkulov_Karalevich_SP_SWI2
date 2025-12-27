@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/private-messages")
@@ -26,6 +27,17 @@ public class PrivateMessageController {
         this.messageService = messageService;
         this.userRepository = userRepository;
         this.privateMessageRepository = privateMessageRepository;
+    }
+
+    @PostMapping("/send")
+    public ResponseEntity<PrivateMessageDTO> sendPrivateMessage(@RequestBody @Valid PrivateMessageDTO messageDTO,
+                                                                Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        PrivateMessageDTO response = messageService.sendPrivateMessage(messageDTO, principal.getName());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
