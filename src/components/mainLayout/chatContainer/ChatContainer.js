@@ -17,6 +17,7 @@ const ChatContainer = ({ activeChat, userId }) => {
 
     const currentUserId = userId || parseInt(localStorage.getItem("userId"), 10);
     const currentUsername = localStorage.getItem("user");
+    const isAuthenticated = Boolean(currentUsername);
 
     const normalizeGroupMessage = useCallback((message) => ({
         id: message.messageId ?? message.id,
@@ -47,6 +48,13 @@ const ChatContainer = ({ activeChat, userId }) => {
     const fetchMessages = useCallback(() => {
         if (!activeChat?.id || activeChat?.type !== "group") return;
 
+        if (!isAuthenticated) {
+            if (activeChat.id !== 1) {
+                notify("Login required to view messages in this room.", "warning");
+            }
+            return;
+        }
+
         apiFetch(`/api/messages/${activeChat.id}`, { method: "GET" }, { parse: "json" })
             .then(data => {
                 const messagesData = Array.isArray(data) ? data : [];
@@ -56,7 +64,7 @@ const ChatContainer = ({ activeChat, userId }) => {
             .catch(() => {
                 notify("Failed to load messages.", "error");
             });
-    }, [activeChat?.id, activeChat?.type, notify, normalizeGroupMessage]);
+    }, [activeChat?.id, activeChat?.type, isAuthenticated, notify, normalizeGroupMessage]);
 
     // Fetch users function (fixed syntax error here)
     const fetchChatUsers = useCallback(() => {
@@ -123,6 +131,10 @@ const ChatContainer = ({ activeChat, userId }) => {
         if (!newMessage.trim()) return;
 
         if (activeChat.type === "private") {
+            if (!isAuthenticated) {
+                notify("Login required to send private messages.", "warning");
+                return;
+            }
             const messageData = {
                 recipientId: activeChat.recipientId,
                 content: newMessage,
@@ -143,14 +155,24 @@ const ChatContainer = ({ activeChat, userId }) => {
             return;
         }
 
-        const messageData = {
-            content: newMessage,
-            roomId: activeChat.id,
-            timestamp: new Date().toISOString(),
-            userDTO: {
-                id: currentUserId,
+        if (!isAuthenticated && activeChat.id !== 1) {
+            notify("Login required to send messages in this room.", "warning");
+            return;
+        }
+
+        const messageData = isAuthenticated
+            ? {
+                content: newMessage,
+                roomId: activeChat.id,
+                timestamp: new Date().toISOString(),
+                userDTO: {
+                    id: currentUserId,
+                }
             }
-        };
+            : {
+                content: newMessage,
+                roomId: activeChat.id,
+            };
 
         apiFetch("/api/messages/write", {
             method: "POST",
