@@ -21,25 +21,9 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("user"));
     const { notify } = useNotify();
 
-    // Kafka Queue Logic (Restored and Translated)
     const fetchKafkaQueue = async () => {
         try {
-            const res = await fetch("http://localhost:8080/api/queue/main?limit=50", {
-                method: "GET",
-                credentials: "include",
-            });
-
-            const text = await res.text();
-
-            if (!text) return;
-
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.error("Kafka queue parse error");
-                return;
-            }
+            const data = await apiFetch("/api/queue/main?limit=50", { method: "GET" }, { parse: "json" });
 
             if (!Array.isArray(data) || data.length === 0) {
                 // Uncomment the line below if you want an alert even when empty
@@ -48,7 +32,6 @@ const Sidebar = ({ activeChatId, onSelectChat }) => {
             }
 
             alert("Kafka queue messages:\n\n" + data.join("\n"));
-
         } catch (e) {
             console.warn("Kafka queue fetch failed (service might be down)");
         }
