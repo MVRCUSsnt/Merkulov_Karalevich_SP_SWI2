@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.demo.service.kafka.KafkaProducerService;
 
 import java.security.Principal;
-import java.time.LocalDateTime; 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -94,35 +94,48 @@ public class MessageController {
                 .collect(Collectors.toList());
     }
 
-    // --- ОТПРАВКА СООБЩЕНИЯ (ИСПРАВЛЕНО ВРЕМЯ И БЕЗОПАСНОСТЬ) ---
+
     @PostMapping("/write")
     public ResponseEntity<String> sendMessage(@RequestBody MessageDTO messageDTO, Principal principal) {
+        if (messageDTO.getRoomId() == null) {
+            return ResponseEntity.badRequest().body("Room ID is required");
+        }
+        boolean isMainRoom = Long.valueOf(1L).equals(messageDTO.getRoomId());
+
         Message message = new Message();
         message.setContent(messageDTO.getContent());
 
-        // ✅ ИСПРАВЛЕНИЕ: Используем LocalDateTime вместо Date
+
         message.setTimestamp(LocalDateTime.now());
 
         Room room = new Room();
         room.setId(messageDTO.getRoomId());
         message.setRoom(room);
 
-        // Безопасное получение пользователя
+        Users user = null;
+        String username = "Anonymous";
         if (principal == null) {
-            return ResponseEntity.status(401).body("Unauthorized");
-        }
-        String username = principal.getName();
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-        message.setUsers(user);
+            if (!isMainRoom) {
+                return ResponseEntity.status(401).body("Unauthorized");
+            }
+        } else {
 
-        messageRepository.save(message);
+            String currentUsername = principal.getName();
+            username = currentUsername;
+
+            user = userRepository.findByUsername(currentUsername)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + currentUsername));
+
+
+            message.setUsers(user);
+            messageRepository.save(message);
+        }
 
         try {
             String kafkaPayload = String.format(
                     "roomId=%d; user=%s; content=%s",
                     message.getRoom().getId(),
-                    user.getUsername(),
+                    username,
                     message.getContent()
             );
 
@@ -132,10 +145,18 @@ public class MessageController {
             System.err.println("Kafka send failed: " + e.getMessage());
         }
 
-        MessageDTO responseMessage = convertToDTO(message);
+        MessageDTO responseMessage = user == null
+                ? new MessageDTO(
+                null,
+                messageDTO.getRoomId(),
+                messageDTO.getContent(),
+                message.getTimestamp().toString(),
+                null,
+                new UserDTO(null, "Anonymous", null)
+        )
+                : convertToDTO(message);
 
         messagingTemplate.convertAndSend("/topic/messages/" + message.getRoom().getId(), responseMessage);
-
         return ResponseEntity.ok("Сообщение успешно сохранено и отправлено через WebSocket");
     }
 

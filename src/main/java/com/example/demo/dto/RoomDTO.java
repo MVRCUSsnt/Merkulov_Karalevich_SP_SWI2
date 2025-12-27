@@ -1,10 +1,16 @@
 package com.example.demo.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class RoomDTO {
 
     private Long id;
     private String name;
     private String description;
+
+    public RoomDTO() {
+    }
 
     public RoomDTO(Long id, String name, String description) {
         this.id = id;
@@ -12,7 +18,8 @@ public class RoomDTO {
         this.description = description;
     }
 
-    public RoomDTO(String name, String description) {
+    @JsonCreator
+    public RoomDTO(@JsonProperty("name") String name, @JsonProperty("description") String description) {
         this.name = name;
         this.description = description;
     }
