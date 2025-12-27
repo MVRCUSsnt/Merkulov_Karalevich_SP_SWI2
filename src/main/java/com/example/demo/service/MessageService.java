@@ -116,18 +116,20 @@ public class MessageService {
 
         privateMessageRepository.save(message);
 
-        // Отправляем WebSocket-сообщение конкретному получателю
-        messagingTemplate.convertAndSendToUser(
-                recipient.getUsername(), "/queue/messages", message
-        );
-
-        return new PrivateMessageDTO(
+        PrivateMessageDTO response = new PrivateMessageDTO(
                 recipient.getId(),
                 sender.getUsername(),
                 recipient.getUsername(),
                 message.getContent(),
                 message.getTimestamp().toString()
         );
+
+        // Отправляем WebSocket-сообщение конкретному получателю
+        messagingTemplate.convertAndSendToUser(
+                recipient.getUsername(), "/queue/messages", response
+        );
+
+        return response;
     }
 
     public void deletePrivateMessage(Long messageId, String username) {
