@@ -56,7 +56,7 @@ public class PrivateMessageController {
                         message.getSender().getUsername(),
                         message.getRecipient().getUsername(),
                         message.getContent(),
-                        message.getTimestamp().toString()
+                        message.getTimestamp().atOffset(java.time.ZoneOffset.UTC).toString()
                 ))
                 .collect(Collectors.toList());
     }

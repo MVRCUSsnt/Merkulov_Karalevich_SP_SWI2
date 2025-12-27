@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.Users;
 import com.example.demo.dto.UserRegistrationDTO;
+import com.example.demo.dto.AvatarUpdateDTO;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.service.CookieService;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -95,6 +97,15 @@ public class AuthController {
         responseBody.put("email", user.getEmail());
 
         return ResponseEntity.ok(responseBody);
+    }
+
+    @PutMapping("/avatar")
+    public ResponseEntity<Users> updateAvatar(@RequestBody @Valid AvatarUpdateDTO avatarUpdateDTO, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Users updatedUser = userService.updateAvatar(principal.getName(), avatarUpdateDTO.getAvatarUrl());
+        return ResponseEntity.ok(updatedUser);
     }
 
 

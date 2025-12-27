@@ -28,7 +28,7 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // 🔹 Реализация метода для Spring Security
+    //  Реализация метода для Spring Security
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Users user = userRepository.findByUsername(username)
@@ -40,7 +40,7 @@ public class UserService implements UserDetailsService {
         );
     }
 
-    // 🔹 Аутентификация
+    // Аутентификация
     public Users authenticateAndGetUser(LoginRequest loginRequest) {
         Users user = userRepository.findByUsername(loginRequest.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + loginRequest.getUsername()));
@@ -52,7 +52,7 @@ public class UserService implements UserDetailsService {
         return user;
     }
 
-    // 🔹 Создание пользователя
+    // Создание пользователя
     public Users createUser(UserRegistrationDTO userRegistrationDTO) {
         if (userRepository.existsByUsername(userRegistrationDTO.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
@@ -67,19 +67,19 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
-    // 🔹 Получение пользователя по ID
+    // Получение пользователя по ID
     public Users getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
-    // 🔹 Получение всех пользователей
+    // Получение всех пользователей
     public List<Users> getAllUsers(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return userRepository.findAll(pageable).getContent();
     }
 
-    // 🔹 Обновление пользователя
+    // Обновление пользователя
     public Users updateUser(Long id, UserRegistrationDTO userRegistrationDTO) {
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -90,7 +90,7 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
-    // 🔹 Удаление пользователя
+    // Удаление пользователя
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("User not found with id: " + id);
@@ -98,14 +98,20 @@ public class UserService implements UserDetailsService {
         userRepository.deleteById(id);
     }
 
-    // 🔹 Получение пользователя по username (возвращает Optional)
+    // Получение пользователя по username (возвращает Optional)
     public Optional<Users> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
-    // 🔹 Получение пользователя по username (кидает исключение, если не найден)
+    // Получение пользователя по username (кидает исключение, если не найден)
     public Users getUserByUsername(String username) {
         return findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+    }
+
+    public Users updateAvatar(String username, String avatarUrl) {
+        Users user = getUserByUsername(username);
+        user.setAvatarUrl(avatarUrl);
+        return userRepository.save(user);
     }
 }

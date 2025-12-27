@@ -44,6 +44,7 @@ public class MessageService {
     public Message createMessage(MessageDTO messageDTO) {
         Message message = new Message();
         message.setContent(messageDTO.getContent());
+        message.setAttachmentUrl(messageDTO.getAttachmentUrl());
         setUserAndRoom(message, messageDTO);
         return messageRepository.save(message);
     }
@@ -62,16 +63,18 @@ public class MessageService {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
         message.setContent(messageDTO.getContent());
+        message.setAttachmentUrl(messageDTO.getAttachmentUrl());
         setUserAndRoom(message, messageDTO);
         return messageRepository.save(message);
     }
+
 
     public void deleteMessage(Long id, Principal principal) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
 
         // Проверка на право удаления
-        if (!message.getUsers().getUsername().equals(principal.getName())) {
+        if (message.getUsers() == null || !message.getUsers().getUsername().equals(principal.getName())) {
             throw new IllegalArgumentException("You are not authorized to delete this message");
         }
 
@@ -188,7 +191,7 @@ public class MessageService {
                 message.getSender().getUsername(),
                 message.getRecipient().getUsername(),
                 message.getContent(),
-                message.getTimestamp().toString()
+                message.getTimestamp().atOffset(java.time.ZoneOffset.UTC).toString()
         );
     }
 }

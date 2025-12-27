@@ -5,8 +5,10 @@ import com.example.demo.Room;
 import com.example.demo.Users;
 import com.example.demo.dto.MessageDTO;
 import com.example.demo.dto.PrivateMessageDTO;
+import com.example.demo.dto.RoomNotificationDTO;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.repositories.MessageRepository;
+import com.example.demo.repositories.RoomRepository;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import com.example.demo.service.kafka.KafkaProducerService;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,17 +31,21 @@ public class MessageController {
     private final MessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
+    private final RoomRepository roomRepository;
     private final KafkaProducerService kafkaProducerService;
 
     @Autowired
     public MessageController(MessageRepository messageRepository,
                              MessageService messageService,
                              SimpMessagingTemplate messagingTemplate,
-                             UserRepository userRepository, KafkaProducerService kafkaProducerService) {
+                             UserRepository userRepository,
+                             RoomRepository roomRepository,
+                             KafkaProducerService kafkaProducerService) {
         this.messageRepository = messageRepository;
         this.messageService = messageService;
         this.messagingTemplate = messagingTemplate;
         this.userRepository = userRepository;
+        this.roomRepository = roomRepository;
         this.kafkaProducerService = kafkaProducerService;
     }
 
@@ -104,32 +111,33 @@ public class MessageController {
 
         Message message = new Message();
         message.setContent(messageDTO.getContent());
+        message.setAttachmentUrl(messageDTO.getAttachmentUrl());
 
-
+        // ✅ ИСПРАВЛЕНИЕ: Используем LocalDateTime вместо Date
         message.setTimestamp(LocalDateTime.now());
 
-        Room room = new Room();
-        room.setId(messageDTO.getRoomId());
+        Room room = roomRepository.findById(messageDTO.getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room not found: " + messageDTO.getRoomId()));
         message.setRoom(room);
 
         Users user = null;
         String username = "Anonymous";
+
         if (principal == null) {
             if (!isMainRoom) {
                 return ResponseEntity.status(401).body("Unauthorized");
             }
         } else {
-
+            // ИСПРАВЛЕНИЕ ЛЯМБДЫ: создаем отдельную переменную, которая не меняется (effectively final)
             String currentUsername = principal.getName();
-            username = currentUsername;
+            username = currentUsername; // Обновляем внешнюю переменную для логики ниже (Kafka/Notifications)
 
             user = userRepository.findByUsername(currentUsername)
                     .orElseThrow(() -> new RuntimeException("User not found: " + currentUsername));
-
-
             message.setUsers(user);
-            messageRepository.save(message);
         }
+
+        messageRepository.save(message);
 
         try {
             String kafkaPayload = String.format(
@@ -145,34 +153,55 @@ public class MessageController {
             System.err.println("Kafka send failed: " + e.getMessage());
         }
 
-        MessageDTO responseMessage = user == null
-                ? new MessageDTO(
-                null,
-                messageDTO.getRoomId(),
-                messageDTO.getContent(),
-                message.getTimestamp().toString(),
-                null,
-                new UserDTO(null, "Anonymous", null)
-        )
-                : convertToDTO(message);
+        MessageDTO responseMessage = convertToDTO(message);
 
         messagingTemplate.convertAndSend("/topic/messages/" + message.getRoom().getId(), responseMessage);
+
+        sendRoomNotifications(room, message, user, username);
+
         return ResponseEntity.ok("Сообщение успешно сохранено и отправлено через WebSocket");
     }
 
     // Вспомогательный метод
     private MessageDTO convertToDTO(Message message) {
+        UserDTO userDTO = message.getUsers() == null
+                ? new UserDTO(null, "Anonymous", null)
+                : new UserDTO(
+                message.getUsers().getId(),
+                message.getUsers().getUsername(),
+                message.getUsers().getAvatarUrl()
+        );
         return new MessageDTO(
                 message.getId(),
                 message.getRoom().getId(),
                 message.getContent(),
-                message.getTimestamp().toString(), // toString() для LocalDateTime работает корректно
-                message.getUsers().getId(),
-                new UserDTO(
-                        message.getUsers().getId(),
-                        message.getUsers().getUsername(),
-                        message.getUsers().getAvatarUrl()
-                )
+                message.getAttachmentUrl(),
+                message.getTimestamp().atOffset(ZoneOffset.UTC).toString(),
+                message.getUsers() == null ? null : message.getUsers().getId(),
+                userDTO
         );
+    }
+
+    private void sendRoomNotifications(Room room, Message message, Users sender, String senderUsername) {
+        if (room.getUsers() == null || room.getUsers().isEmpty()) {
+            return;
+        }
+
+        RoomNotificationDTO notification = new RoomNotificationDTO(
+                room.getId(),
+                message.getId(),
+                message.getContent(),
+                message.getTimestamp().atOffset(ZoneOffset.UTC).toString(),
+                sender == null ? null : sender.getId(),
+                senderUsername
+        );
+
+        room.getUsers().stream()
+                .filter(user -> sender == null || !user.getId().equals(sender.getId()))
+                .forEach(user -> messagingTemplate.convertAndSendToUser(
+                        user.getUsername(),
+                        "/queue/room-notifications",
+                        notification
+                ));
     }
 }

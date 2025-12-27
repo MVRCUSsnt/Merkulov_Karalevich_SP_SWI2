@@ -4,6 +4,7 @@ public class MessageDTO {
     private Long messageId;
     private Long roomId;
     private String content;
+    private String attachmentUrl;
 
     private String timestamp;
 
@@ -11,10 +12,14 @@ public class MessageDTO {
 
     private UserDTO userDTO;
 
-    public MessageDTO(Long messageId, Long roomId, String content, String timestamp, Long userId, UserDTO userDTO) {
+    public MessageDTO() {
+    }
+
+    public MessageDTO(Long messageId, Long roomId, String content, String attachmentUrl, String timestamp, Long userId, UserDTO userDTO) {
         this.messageId = messageId;
         this.roomId = roomId;
         this.content = content;
+        this.attachmentUrl = attachmentUrl;
         this.timestamp = timestamp;
         this.userId = userId;
         this.userDTO = userDTO;
@@ -42,6 +47,14 @@ public class MessageDTO {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getAttachmentUrl() {
+        return attachmentUrl;
+    }
+
+    public void setAttachmentUrl(String attachmentUrl) {
+        this.attachmentUrl = attachmentUrl;
     }
 
     public String getTimestamp() {
