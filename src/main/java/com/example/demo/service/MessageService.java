@@ -96,7 +96,7 @@ public class MessageService {
     public PrivateMessageDTO sendPrivateMessage(PrivateMessageDTO messageDTO, String senderUsername) {
         Users sender = userRepository.findByUsername(senderUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
-        Users recipient = userRepository.findById(messageDTO.getRecipientId())
+        Users recipient = userRepository.findByUsername(messageDTO.getRecipientUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
 
         PrivateMessage message = new PrivateMessage();
