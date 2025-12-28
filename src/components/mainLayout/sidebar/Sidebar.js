@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./Sidebar.css";
 import Login from "../../authForm/login/Login";
 import Registration from "../../authForm/registration/Registration";
@@ -12,8 +12,7 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [formType, setFormType] = useState(null);
-    const [personalChats, setPersonalChats] = useState([]);
-    const [groupChats, setGroupChats] = useState([{ id: 1, name: "Main Room", description: "Main Room", type: "group" }]);
+    const [privateChats, setPrivateChats] = useState([]);    const [groupChats, setGroupChats] = useState([{ id: 1, name: "Main Room", description: "Main Room", type: "group" }]);
     const [isGroupsLoaded, setIsGroupsLoaded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -37,6 +36,27 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
         }
     };
 
+    const fetchPrivateChats = useCallback(() => {
+        if (!isLoggedIn) return;
+
+        apiFetch("/api/private-messages/conversations", { method: "GET" }, { parse: "json" })
+            .then(data => {
+                console.log("Loaded conversations:", data);
+                const chats = Array.isArray(data) ? data : [];
+                setPrivateChats(
+                    chats.map((user) => ({
+                        id: user.id,
+                        recipientId: user.id,
+                        recipientUsername: user.username,
+                        name: user.username,
+                        avatarUrl: user.avatarUrl || "/default-avatar.webp",
+                        type: "private",
+                    }))
+                );
+            })
+            .catch(err => console.error("Failed to load private chats", err));
+    }, [isLoggedIn]);
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         const storedUserId = localStorage.getItem("userId");
@@ -51,6 +71,7 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
             setIsLoggedIn(false);
         } else {
             fetchGroupChats();
+            fetchPrivateChats();
 
             // Call Kafka check slightly after load
             setTimeout(() => {
@@ -58,7 +79,8 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
             }, 300);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [fetchPrivateChats]);
+
 
     const fetchGroupChats = () => {
         if (isGroupsLoaded) return;
@@ -111,14 +133,17 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
         const recipientUsername = prompt("Enter recipient username:");
         if (!recipientUsername) return;
 
+
         const newChat = {
             id: `dm-${recipientUsername}`,
             name: recipientUsername,
             type: "private",
             recipientUsername,
+            recipientId: null,
+            avatarUrl: "/default-avatar.webp",
         };
 
-        setPersonalChats((prev) => {
+        setPrivateChats((prev) => {
             if (prev.some((chat) => chat.recipientUsername === newChat.recipientUsername)) return prev;
             return [...prev, newChat];
         });
@@ -141,9 +166,8 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
         setIsProfileOpen(false);
         setIsLoggedIn(false);
 
-        setPersonalChats([]);
+        setPrivateChats([]);
         setGroupChats([{ id: 1, name: "Main Room", description: "Main Room", type: "group" }]);
-
         setIsGroupsLoaded(false);
 
         onSelectChat(defaultChat);
@@ -159,6 +183,7 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
         setIsProfileOpen(false);
         setFormType(null);
         fetchGroupChats();
+        fetchPrivateChats();
 
         // Check Kafka after login
         await fetchKafkaQueue();
@@ -182,9 +207,9 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
                 </div>
 
                 <ChatList
-                    personalChats={personalChats}
-                    groupChats={groupChats}
-                    activeChat={activeChat}
+                personalChats={privateChats}
+                groupChats={groupChats}
+                activeChat={activeChat}
                     onSelectChat={onSelectChat}
                     isPersonal={isPersonal}
                     setIsPersonal={(value) => {

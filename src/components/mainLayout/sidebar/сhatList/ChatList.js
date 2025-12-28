@@ -29,7 +29,7 @@ const ChatList = ({
             <div className="group-section">
                 <ul className="chat-list">
                     {currentList.length === 0 && (
-                        <li className="empty-chat-list">No chats available</li>
+                        <li className="empty-chat-list">No active chats</li>
                     )}
                     {currentList.map((chat) => {
                         const chatName = chat?.name || "Untitled";
@@ -43,8 +43,15 @@ const ChatList = ({
                                 }}
                             >
                                 <div className="chat-item">
+                                    {isPersonal && (
+                                        <img
+                                            src={chat.avatarUrl || "/default-avatar.webp"}
+                                            alt={`${chatName} avatar`}
+                                            className="chat-avatar"
+                                        />
+                                    )}
                                     <span className="chat-name">{chatName}</span>
-                                    {notificationCount > 0 && (
+                                    {!isPersonal && notificationCount > 0 && (
                                         <span className="chat-notification-badge">{notificationCount}</span>
                                     )}
                                 </div>

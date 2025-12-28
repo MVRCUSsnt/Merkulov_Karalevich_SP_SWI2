@@ -76,6 +76,13 @@
     width: 100%;
 }
 
+.chat-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .chat-name {
     font-weight: 600;
     color: #222;
