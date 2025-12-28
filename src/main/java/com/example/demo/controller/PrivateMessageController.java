@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.PrivateMessage;
 import com.example.demo.Users;
 import com.example.demo.dto.PrivateMessageDTO;
+import com.example.demo.dto.UserDTO;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repositories.PrivateMessageRepository;
 import com.example.demo.repositories.UserRepository;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.security.Principal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -78,5 +81,31 @@ public class PrivateMessageController {
     public ResponseEntity<String> deletePrivateMessage(@PathVariable Long messageId, Principal principal) {
         messageService.deletePrivateMessage(messageId, principal.getName());
         return ResponseEntity.ok("Message deleted successfully");
+    }
+
+    @GetMapping("/conversations")
+    public ResponseEntity<List<UserDTO>> getConversations(Principal principal) {
+        String currentUsername = principal.getName();
+
+        // 1. Кто писал мне
+        List<Users> senders = privateMessageRepository.findSendersByRecipient(currentUsername);
+        // 2. Кому писал я
+        List<Users> recipients = privateMessageRepository.findRecipientsBySender(currentUsername);
+
+        // 3. Объединяем в один список (Set уберет дубликаты, если мы общались взаимно)
+        Set<Users> conversationPartners = new HashSet<>();
+        conversationPartners.addAll(senders);
+        conversationPartners.addAll(recipients);
+
+        // 4. Превращаем в DTO
+        List<UserDTO> partnerDTOs = conversationPartners.stream()
+                .map(user -> new UserDTO(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getAvatarUrl()
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(partnerDTOs);
     }
 }
