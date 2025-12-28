@@ -3,18 +3,17 @@ package com.example.demo.controller;
 import com.example.demo.PrivateMessage;
 import com.example.demo.Users;
 import com.example.demo.dto.PrivateMessageDTO;
-import com.example.demo.dto.UserDTO;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repositories.PrivateMessageRepository;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.service.MessageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/private-messages")
@@ -29,58 +28,55 @@ public class PrivateMessageController {
         this.privateMessageRepository = privateMessageRepository;
     }
 
+    // 1. Отправка сообщений
     @PostMapping("/send")
     public ResponseEntity<PrivateMessageDTO> sendPrivateMessage(@RequestBody @Valid PrivateMessageDTO messageDTO,
                                                                 Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(401).build();
         }
-
+        // Используем сервис для отправки, так как там есть логика уведомлений (WebSocket/Kafka)
         PrivateMessageDTO response = messageService.sendPrivateMessage(messageDTO, principal.getName());
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping
-    public List<PrivateMessageDTO> getPrivateMessages(String senderUsername, String recipientUsername) {
-        Users sender = userRepository.findByUsername(senderUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
+
+
+    // 2. Получение истории переписки (ИСПРАВЛЕНО)
+    // Принимает username (String), потому что фронтенд присылает имя (например, "Katka")
+    @GetMapping("/{recipientUsername}")
+    public ResponseEntity<List<PrivateMessageDTO>> getChatHistory(@PathVariable String recipientUsername, Principal principal) {
+        String currentUsername = principal.getName();
+
+        // 1. Находим Себя (Отправителя)
+        Users sender = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Sender not found: " + currentUsername));
+
+        // 2. Находим Собеседника (Получателя) по ИМЕНИ
         Users recipient = userRepository.findByUsername(recipientUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Recipient not found: " + recipientUsername));
 
-        List<PrivateMessage> messages = privateMessageRepository
-                .findBySenderAndRecipientOrRecipientAndSenderOrderByTimestampAsc(sender, recipient, recipient, sender);
+        // 3. Достаем переписку с помощью исправленного метода репозитория
+        List<PrivateMessage> messages = privateMessageRepository.findChatHistory(sender, recipient);
 
-        return messages.stream()
+        // 4. Превращаем сущности в DTO для отправки на фронт
+        List<PrivateMessageDTO> dtos = messages.stream()
                 .map(message -> new PrivateMessageDTO(
                         message.getRecipient().getId(),
                         message.getSender().getUsername(),
                         message.getRecipient().getUsername(),
                         message.getContent(),
-                        message.getTimestamp().atOffset(java.time.ZoneOffset.UTC).toString()
+                        message.getTimestamp().toString() // ISO формат времени
                 ))
                 .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
-
-
-    @GetMapping("/{senderId}")
-    public ResponseEntity<List<PrivateMessageDTO>> getMessages(@PathVariable Long senderId, Principal principal) {
-        Users sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
-
-        UserDTO senderDTO = new UserDTO(sender.getId(), sender.getUsername(), sender.getEmail());
-
-        List<PrivateMessageDTO> messages = messageService.getPrivateMessages(senderDTO.getUsername(), principal.getName());
-
-        return ResponseEntity.ok(messages);
-    }
-
-
+    // 3. Удаление сообщений
     @DeleteMapping("/{messageId}")
     public ResponseEntity<String> deletePrivateMessage(@PathVariable Long messageId, Principal principal) {
         messageService.deletePrivateMessage(messageId, principal.getName());
         return ResponseEntity.ok("Message deleted successfully");
     }
-
-
 }

@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 public class PrivateMessageDTO {
     private Long recipientId;
     private String senderUsername;
-    @NotBlank
     private String recipientUsername;
     @NotBlank
     private String content;

@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import jakarta.persistence.criteria.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -84,8 +85,8 @@ public class MessageService {
         Users recipient = userRepository.findByUsername(recipientUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
 
-        List<PrivateMessage> messages = privateMessageRepository
-                .findBySenderAndRecipientOrRecipientAndSenderOrderByTimestampAsc(sender, recipient, recipient, sender);
+        // Используем наш новый надежный метод
+        List<PrivateMessage> messages = privateMessageRepository.findChatHistory(sender, recipient);
 
         return messages.stream()
                 .map(this::convertToDTO)
@@ -96,22 +97,22 @@ public class MessageService {
     public PrivateMessageDTO sendPrivateMessage(PrivateMessageDTO messageDTO, String senderUsername) {
         Users sender = userRepository.findByUsername(senderUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
-        Users recipient = userRepository.findByUsername(messageDTO.getRecipientUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
+        Users recipient = resolveRecipient(messageDTO);
 
         PrivateMessage message = new PrivateMessage();
         message.setSender(sender);
         message.setRecipient(recipient);
         message.setContent(messageDTO.getContent());
+        message.setTimestamp(LocalDateTime.now());
 
-        privateMessageRepository.save(message);
+        PrivateMessage savedMessage = privateMessageRepository.save(message);
 
         PrivateMessageDTO response = new PrivateMessageDTO(
-                recipient.getId(),
-                sender.getUsername(),
-                recipient.getUsername(),
-                message.getContent(),
-                message.getTimestamp().toString()
+                savedMessage.getRecipient().getId(),
+                savedMessage.getSender().getUsername(),
+                savedMessage.getRecipient().getUsername(),
+                savedMessage.getContent(),
+                savedMessage.getTimestamp().toString()
         );
 
         // Отправляем WebSocket-сообщение конкретному получателю
@@ -120,6 +121,22 @@ public class MessageService {
         );
 
         return response;
+    }
+
+    private Users resolveRecipient(PrivateMessageDTO messageDTO) {
+        String recipientUsername = messageDTO.getRecipientUsername();
+        if (recipientUsername != null && !recipientUsername.isBlank()) {
+            return userRepository.findByUsername(recipientUsername)
+                    .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
+        }
+
+        Long recipientId = messageDTO.getRecipientId();
+        if (recipientId != null) {
+            return userRepository.findById(recipientId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
+        }
+
+        throw new ResourceNotFoundException("Recipient not found");
     }
 
     public void deletePrivateMessage(Long messageId, String username) {
