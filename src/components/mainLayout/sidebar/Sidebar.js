@@ -108,22 +108,18 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) =
     };
 
     const handleAddDirectChat = () => {
-        const recipientId = prompt("Enter recipient user ID:");
-        if (!recipientId) return;
-
         const recipientUsername = prompt("Enter recipient username:");
         if (!recipientUsername) return;
 
         const newChat = {
-            id: `dm-${recipientId}`,
+            id: `dm-${recipientUsername}`,
             name: recipientUsername,
             type: "private",
-            recipientId: Number(recipientId),
             recipientUsername,
         };
 
         setPersonalChats((prev) => {
-            if (prev.some((chat) => chat.recipientId === newChat.recipientId)) return prev;
+            if (prev.some((chat) => chat.recipientUsername === newChat.recipientUsername)) return prev;
             return [...prev, newChat];
         });
         onSelectChat(newChat);

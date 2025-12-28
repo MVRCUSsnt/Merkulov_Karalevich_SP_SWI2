@@ -174,7 +174,7 @@ const ChatContainer = ({ activeChat, userId }) => {
                 return;
             }
             const messageData = {
-                recipientId: activeChat.recipientId,
+                recipientUsername: activeChat.recipientUsername,
                 content: newMessage,
             };
 
@@ -439,7 +439,7 @@ const ChatContainer = ({ activeChat, userId }) => {
                             setIsUsersModalOpen(true);
                         }}>Participants Info
                         </button>
-                        <button className="chat-modal-btn" onClick={handleAddUser}>Add Participant</button>
+                        <button className="chat-modal-btn" onClick={handleAddUser}>Add User</button>
                         <button className="chat-modal-close" onClick={() => setIsModalOpen(false)}>Close</button>
                     </div>
                 </div>
