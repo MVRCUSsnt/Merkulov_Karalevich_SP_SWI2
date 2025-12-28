@@ -101,6 +101,17 @@
     color: black;
 }
 
+.chat-list li.empty-chat-list {
+    background-color: transparent;
+    color: #9aa0a6;
+    cursor: default;
+}
+
+.chat-list li.empty-chat-list:hover {
+    background-color: transparent;
+    color: #9aa0a6;
+}
+
 .chat-list li:hover,
 .chat-list li.active {
     background-color: blue;
