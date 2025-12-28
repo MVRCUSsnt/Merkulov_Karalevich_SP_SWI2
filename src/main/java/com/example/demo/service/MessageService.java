@@ -16,7 +16,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import jakarta.persistence.criteria.*;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,18 +67,6 @@ public class MessageService {
         return messageRepository.save(message);
     }
 
-
-    public void deleteMessage(Long id, Principal principal) {
-        Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Message not found with id: " + id));
-
-        // Проверка на право удаления
-        if (message.getUsers() == null || !message.getUsers().getUsername().equals(principal.getName())) {
-            throw new IllegalArgumentException("You are not authorized to delete this message");
-        }
-
-        messageRepository.deleteById(id);
-    }
 
     private void setUserAndRoom(Message message, MessageDTO messageDTO) {
         Users users = userRepository.findById(messageDTO.getUserDTO().getId())

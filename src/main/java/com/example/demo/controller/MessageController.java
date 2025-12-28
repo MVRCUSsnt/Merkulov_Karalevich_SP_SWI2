@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.HiddenMessage;
 import com.example.demo.Message;
 import com.example.demo.Room;
 import com.example.demo.Users;
@@ -8,12 +9,15 @@ import com.example.demo.dto.PrivateMessageDTO;
 import com.example.demo.dto.RoomNotificationDTO;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.repositories.MessageRepository;
+import com.example.demo.repositories.HiddenMessageRepository;
 import com.example.demo.repositories.RoomRepository;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.service.kafka.KafkaProducerService;
 
@@ -33,6 +37,7 @@ public class MessageController {
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
     private final KafkaProducerService kafkaProducerService;
+    private final HiddenMessageRepository hiddenMessageRepository;
 
     @Autowired
     public MessageController(MessageRepository messageRepository,
@@ -40,23 +45,44 @@ public class MessageController {
                              SimpMessagingTemplate messagingTemplate,
                              UserRepository userRepository,
                              RoomRepository roomRepository,
-                             KafkaProducerService kafkaProducerService) {
+                             KafkaProducerService kafkaProducerService,
+                             HiddenMessageRepository hiddenMessageRepository) {
         this.messageRepository = messageRepository;
         this.messageService = messageService;
         this.messagingTemplate = messagingTemplate;
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
         this.kafkaProducerService = kafkaProducerService;
+        this.hiddenMessageRepository = hiddenMessageRepository;
     }
 
     // --- УДАЛЕНИЕ ---
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteMessage(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<String> deleteMessage(@PathVariable Long id,
+                                                @RequestParam(defaultValue = "false") boolean forEveryone,
+                                                Principal principal) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
         Long roomId = message.getRoom().getId();
 
-        messageService.deleteMessage(id, principal);
+        Users currentUser = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found: " + principal.getName()));
+        boolean isOwner = message.getUsers() != null
+                && message.getUsers().getUsername().equals(currentUser.getUsername());
+
+        if (forEveryone) {
+            if (!isOwner) {
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Чужое сообщение нельзя удалить для всех"
+                );
+            }
+            hiddenMessageRepository.deleteByMessage(message);
+            messageRepository.delete(message);
+        } else {
+            hiddenMessageRepository.findByUserAndMessage(currentUser, message)
+                    .orElseGet(() -> hiddenMessageRepository.save(new HiddenMessage(currentUser, message)));
+        }
 
         // TODO: Раскомментировать, когда Фронтенд научится понимать события "DELETE"
         /*
@@ -74,6 +100,14 @@ public class MessageController {
     public ResponseEntity<MessageDTO> editMessage(@PathVariable Long id,
                                                   @RequestBody MessageDTO messageDTO,
                                                   Principal principal) {
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+        if (message.getUsers() == null || !message.getUsers().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Редактирование чужих сообщений запрещено"
+            );
+        }
         Message updatedMessage = messageService.updateMessage(id, messageDTO);
         MessageDTO responseDTO = convertToDTO(updatedMessage);
 
@@ -94,8 +128,18 @@ public class MessageController {
 
     // --- ПОЛУЧЕНИЕ СООБЩЕНИЙ ЧАТА ---
     @GetMapping("/{roomId}")
-    public List<MessageDTO> getMessages(@PathVariable Long roomId) {
+    public List<MessageDTO> getMessages(@PathVariable Long roomId, Principal principal) {
         List<Message> messages = messageRepository.findByRoomId(roomId);
+        if (principal != null) {
+            Users currentUser = userRepository.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found: " + principal.getName()));
+            java.util.Set<Long> hiddenMessageIds = hiddenMessageRepository.findByUser(currentUser).stream()
+                    .map(hiddenMessage -> hiddenMessage.getMessage().getId())
+                    .collect(java.util.stream.Collectors.toSet());
+            messages = messages.stream()
+                    .filter(message -> !hiddenMessageIds.contains(message.getId()))
+                    .toList();
+        }
         return messages.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
