@@ -45,6 +45,26 @@
     word-wrap: break-word;
 }
 
+.message-content {
+    white-space: pre-wrap;
+}
+
+.message-attachment {
+    margin-top: 8px;
+}
+
+.message-attachment-image {
+    max-width: 240px;
+    max-height: 240px;
+    border-radius: 6px;
+    display: block;
+}
+
+.message-attachment-link {
+    color: #0077cc;
+    text-decoration: underline;
+}
+
 .own {
     background-color: #d1f7c4;
     color: #000;

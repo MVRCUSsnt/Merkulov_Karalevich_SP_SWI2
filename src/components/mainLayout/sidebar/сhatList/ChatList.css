@@ -66,6 +66,31 @@
     padding: 15px;
 }
 
+.chat-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    width: 100%;
+}
+
+.chat-name {
+    font-weight: 600;
+    color: #222;
+}
+
+.chat-notification-badge {
+    min-width: 22px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #ff5a5f;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+}
+
 /* Контейнер для списка групп */
 .group-section {
     display: flex;

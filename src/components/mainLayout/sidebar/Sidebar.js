@@ -8,7 +8,7 @@ import { apiFetch } from "../../../api/client";
 import { useNotify } from "../../common/NotificationContext";
 import { clearSession } from "../../../utils/session";
 
-const Sidebar = ({ activeChat, onSelectChat, defaultChat }) => {
+const Sidebar = ({ activeChat, onSelectChat, defaultChat, roomNotifications }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [formType, setFormType] = useState(null);
@@ -197,6 +197,7 @@ const Sidebar = ({ activeChat, onSelectChat, defaultChat }) => {
                     }}
                     onAddGroupChat={handleAddGroupChat}
                     onAddDirectChat={handleAddDirectChat}
+                    roomNotifications={roomNotifications}
                 />
 
                 {loading && <p>Loading...</p>}

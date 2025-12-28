@@ -35,6 +35,10 @@ class WebSocketService {
                         this.subscribeToPrivateMessages(callback);
                         return;
                     }
+                    if (type === "room-notifications") {
+                        this.subscribeToRoomNotifications(callback);
+                        return;
+                    }
                     this.subscribeToChat(chatId, callback);
                 });
                 this.pendingSubscriptions = [];
@@ -96,6 +100,27 @@ class WebSocketService {
         console.log("Subscribed to private messages");
     }
 
+    subscribeToRoomNotifications(onMessageReceived) {
+        const key = "room-notifications";
+        if (!this.client || !this.isConnected) {
+            console.warn("WebSocket not connected yet, room notifications deferred");
+            this.pendingSubscriptions.push({ chatId: key, callback: onMessageReceived, type: "room-notifications" });
+            return;
+        }
+
+        if (this.subscriptions[key]) {
+            console.warn("Already subscribed to room notifications");
+            return;
+        }
+
+        this.subscriptions[key] = this.client.subscribe("/user/queue/room-notifications", (message) => {
+            const newNotification = JSON.parse(message.body);
+            console.log("New room notification:", newNotification);
+            onMessageReceived(newNotification);
+        });
+        console.log("Subscribed to room notifications");
+    }
+
     unsubscribeFromChat(chatId) {
         if (this.subscriptions[chatId]) {
             this.subscriptions[chatId].unsubscribe();
@@ -110,6 +135,15 @@ class WebSocketService {
             this.subscriptions[key].unsubscribe();
             delete this.subscriptions[key];
             console.log("Unsubscribed from private messages");
+        }
+    }
+
+    unsubscribeFromRoomNotifications() {
+        const key = "room-notifications";
+        if (this.subscriptions[key]) {
+            this.subscriptions[key].unsubscribe();
+            delete this.subscriptions[key];
+            console.log("Unsubscribed from room notifications");
         }
     }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import "./ChatContainer.css";
 import Message from "./message/Message";
 import WebSocketService from "./WebSocketService";
@@ -13,7 +13,10 @@ const ChatContainer = ({ activeChat, userId }) => {
     const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [editedMessage, setEditedMessage] = useState("");
+    const [attachmentFile, setAttachmentFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
     const { notify } = useNotify();
+    const fileInputRef = useRef(null);
 
     const currentUserId = userId || parseInt(localStorage.getItem("userId"), 10);
     const currentUsername = localStorage.getItem("user");
@@ -22,7 +25,8 @@ const ChatContainer = ({ activeChat, userId }) => {
     const normalizeGroupMessage = useCallback((message) => ({
         id: message.messageId ?? message.id,
         roomId: message.roomId,
-        content: message.content ?? "Message unavailable",
+        content: message.content ?? "",
+        attachmentUrl: message.attachmentUrl ?? null,
         timestamp: message.timestamp,
         userDTO: message.userDTO ?? null,
         userId: message.userId ?? message.userDTO?.id
@@ -122,15 +126,43 @@ const ChatContainer = ({ activeChat, userId }) => {
         }
     }, [selectedMessage]);
 
+    const clearAttachment = useCallback(() => {
+        setAttachmentFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    }, []);
+
     useEffect(() => {
         setSelectedMessage(null);
         setEditedMessage("");
-    }, [activeChat?.id, activeChat?.type]);
+        clearAttachment();
+    }, [activeChat?.id, activeChat?.type, clearAttachment]);
 
-    const sendMessage = () => {
-        if (!newMessage.trim()) return;
+    const uploadAttachment = async () => {
+        if (!attachmentFile) return null;
+
+        const formData = new FormData();
+        formData.append("file", attachmentFile);
+        const response = await apiFetch("/api/files/upload", {
+            method: "POST",
+            body: formData
+        }, { parse: "json" });
+
+        return response?.url;
+    };
+
+    const sendMessage = async () => {
+        if (isUploading) return;
+        const hasContent = Boolean(newMessage.trim());
+        const hasAttachment = Boolean(attachmentFile);
+        if (!hasContent && !hasAttachment) return;
 
         if (activeChat.type === "private") {
+            if (hasAttachment) {
+                notify("Attachments are only supported in group chats.", "warning");
+                return;
+            }
             if (!isAuthenticated) {
                 notify("Login required to send private messages.", "warning");
                 return;
@@ -160,19 +192,24 @@ const ChatContainer = ({ activeChat, userId }) => {
             return;
         }
 
-        const messageData = isAuthenticated
-            ? {
-                content: newMessage,
-                roomId: activeChat.id,
-                timestamp: new Date().toISOString(),
-                userDTO: {
-                    id: currentUserId,
-                }
+        let attachmentUrl = null;
+        if (hasAttachment) {
+            setIsUploading(true);
+            try {
+                attachmentUrl = await uploadAttachment();
+            } catch (error) {
+                notify("Failed to upload attachment.", "error");
+                setIsUploading(false);
+                return;
             }
-            : {
-                content: newMessage,
-                roomId: activeChat.id,
-            };
+            setIsUploading(false);
+        }
+
+        const messageData = {
+            content: newMessage,
+            roomId: activeChat.id,
+            attachmentUrl
+        };
 
         apiFetch("/api/messages/write", {
             method: "POST",
@@ -182,6 +219,7 @@ const ChatContainer = ({ activeChat, userId }) => {
             .then(data => {
                 console.log("Message sent:", data);
                 setNewMessage("");
+                clearAttachment();
             })
             .catch(() => {
                 notify("Failed to send message.", "error");
@@ -267,12 +305,13 @@ const ChatContainer = ({ activeChat, userId }) => {
                     <Message
                         key={message.id || `msg-${index}`}
                         messageId={message.id}
-                        content={message.content || "Message unavailable"}
+                        content={message.content ?? ""}
                         sender={{
                             name: message.userDTO?.username || "Anonymous",
                             avatarUrl: message.userDTO?.avatarUrl || "/default-avatar.webp",
                         }}
                         timestamp={message.timestamp}
+                        attachmentUrl={message.attachmentUrl}
                         isOwnMessage={
                             message.userDTO?.id === currentUserId
                             || message.userDTO?.username === currentUsername
@@ -294,7 +333,26 @@ const ChatContainer = ({ activeChat, userId }) => {
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
-                <button onClick={sendMessage}>Send</button>
+                <div className="chat-input-actions">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="chat-file-input"
+                        onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)}
+                    />
+                    {attachmentFile && (
+                        <button
+                            type="button"
+                            className="chat-attachment-clear"
+                            onClick={clearAttachment}
+                        >
+                            Clear
+                        </button>
+                    )}
+                    <button onClick={sendMessage} disabled={isUploading}>
+                        {isUploading ? "Uploading..." : "Send"}
+                    </button>
+                </div>
             </div>
 
             {selectedMessage && (

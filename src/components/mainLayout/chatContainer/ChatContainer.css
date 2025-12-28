@@ -57,6 +57,8 @@
 /* Поле ввода */
 .chat-input {
     display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     padding: 15px;
     border-top: 1px solid #444;
     background-color: #202123;
@@ -68,8 +70,26 @@
     border: none;
     border-radius: 5px;
     background-color: #444;
-    color: white;
-    margin-right: 10px;
+    olor: white;
+}
+
+.chat-input-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-file-input {
+    color: #fff;
+}
+
+.chat-attachment-clear {
+    background-color: #555;
+    padding: 8px 10px;
+}
+
+.chat-attachment-clear:hover {
+    background-color: #666;
 }
 
 .chat-input button {
@@ -83,6 +103,11 @@
 
 .chat-input button:hover {
     background-color: #005fa3;
+}
+
+.chat-input button:disabled {
+    background-color: #4a6b86;
+    cursor: not-allowed;
 }
 
 /* Модальное окно */

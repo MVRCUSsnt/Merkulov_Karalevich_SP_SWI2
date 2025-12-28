@@ -9,7 +9,8 @@ const ChatList = ({
                       isPersonal,
                       setIsPersonal,
                       onAddGroupChat,
-                      onAddDirectChat
+                      onAddDirectChat,
+                      roomNotifications = {}
                   }) => {
 
     const currentList = isPersonal ? personalChats : groupChats;
@@ -32,6 +33,7 @@ const ChatList = ({
                     )}
                     {currentList.map((chat) => {
                         const chatName = chat?.name || "Untitled";
+                        const notificationCount = roomNotifications[chat.id] || 0;
                         return (
                             <li
                                 key={chat.id ?? chatName}
@@ -42,6 +44,9 @@ const ChatList = ({
                             >
                                 <div className="chat-item">
                                     <span className="chat-name">{chatName}</span>
+                                    {notificationCount > 0 && (
+                                        <span className="chat-notification-badge">{notificationCount}</span>
+                                    )}
                                 </div>
                             </li>
                         );
