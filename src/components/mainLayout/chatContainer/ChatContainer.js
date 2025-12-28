@@ -13,6 +13,8 @@ const ChatContainer = ({ activeChat, userId }) => {
     const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [editedMessage, setEditedMessage] = useState("");
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteForEveryone, setDeleteForEveryone] = useState(false);
     const [attachmentFile, setAttachmentFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const { notify } = useNotify();
@@ -123,7 +125,11 @@ const ChatContainer = ({ activeChat, userId }) => {
     useEffect(() => {
         if (selectedMessage) {
             setEditedMessage(selectedMessage.content);
+            setDeleteForEveryone(false);
+            return;
         }
+
+        setIsDeleteModalOpen(false);
     }, [selectedMessage]);
 
     const clearAttachment = useCallback(() => {
@@ -226,19 +232,20 @@ const ChatContainer = ({ activeChat, userId }) => {
             });
     };
 
-    const deleteMessage = (messageId) => {
+    const deleteMessage = (messageId, forEveryone = false) => {
         if (activeChat?.type !== "group") return;
         if (!messageId) {
             console.error("Error: Message ID is missing");
             return;
         }
 
-        apiFetch(`/api/messages/delete/${messageId}`, { method: "DELETE" }, { parse: "text" })
-    .then(() => {
+        apiFetch(`/api/messages/delete/${messageId}?forEveryone=${forEveryone}`, { method: "DELETE" }, { parse: "text" })
+            .then(() => {
                 console.log(`Message with ID ${messageId} deleted`);
                 setSelectedMessage(null);
+                setIsDeleteModalOpen(false);
                 fetchMessages();
-        })
+            })
             .catch(() => {
                 notify("Failed to delete message.", "error");
             });
@@ -334,7 +341,15 @@ const ChatContainer = ({ activeChat, userId }) => {
                     onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
                 <div className="chat-input-actions">
+                    <label
+                        htmlFor="chat-file-upload"
+                        className="chat-file-upload"
+                        aria-label="Attach a file"
+                    >
+                        📎
+                    </label>
                     <input
+                        id="chat-file-upload"
                         type="file"
                         ref={fileInputRef}
                         className="chat-file-input"
@@ -358,24 +373,60 @@ const ChatContainer = ({ activeChat, userId }) => {
             {selectedMessage && (
                 <div className="message-edit-modal">
                     <div className="message-edit-content">
-                        <h3>Edit Message</h3>
-                        <textarea
-                            value={editedMessage}
-                            onChange={(e) => setEditedMessage(e.target.value)}
-                        />
+                        {selectedMessage.userDTO?.id === currentUserId
+                        || selectedMessage.userDTO?.username === currentUsername ? (
+                            <>
+                                <h3>Edit Message</h3>
+                                <textarea
+                                    value={editedMessage}
+                                    onChange={(e) => setEditedMessage(e.target.value)}
+                                />
 
-                        <button onClick={editMessage}>Save</button>
-                        <button onClick={() => {
-                            if (selectedMessage && selectedMessage.id) {
-                                deleteMessage(selectedMessage.id);
-                            } else {
-                                console.error("Error: selectedMessage or ID missing", selectedMessage);
-                            }
-                        }}>Delete
-                        </button>
+                                <button onClick={editMessage}>Save</button>
+                                <button onClick={() => setIsDeleteModalOpen(true)}>Delete</button>
+                            </>
+                        ) : (
+                            <>
+                                <h3>Message</h3>
+                                <p className="message-preview">{selectedMessage.content}</p>
+                                <button onClick={() => {
+                                    if (selectedMessage && selectedMessage.id) {
+                                        deleteMessage(selectedMessage.id, false);
+                                    } else {
+                                        console.error("Error: selectedMessage or ID missing", selectedMessage);
+                                    }
+                                }}>Delete</button>
+                            </>
+                        )}
                         <button onClick={() => setSelectedMessage(null)}>Cancel</button>
                     </div>
                 </div>
+            )}
+
+            {selectedMessage && (
+                isDeleteModalOpen && (
+                    <div className="message-edit-modal">
+                        <div className="message-delete-content">
+                            <h3>Do you want to delete this message?</h3>
+                            <label className="message-delete-checkbox">
+                                <input
+                                    type="checkbox"
+                                    checked={deleteForEveryone}
+                                    onChange={(event) => setDeleteForEveryone(event.target.checked)}
+                                />
+                                Delete for everyone
+                            </label>
+                            <button onClick={() => {
+                                if (selectedMessage && selectedMessage.id) {
+                                    deleteMessage(selectedMessage.id, deleteForEveryone);
+                                } else {
+                                    console.error("Error: selectedMessage or ID missing", selectedMessage);
+                                }
+                            }}>Delete</button>
+                            <button onClick={() => setIsDeleteModalOpen(false)}>Cancel</button>
+                        </div>
+                    </div>
+                )
             )}
 
             {isModalOpen && activeChat?.type === "group" && (

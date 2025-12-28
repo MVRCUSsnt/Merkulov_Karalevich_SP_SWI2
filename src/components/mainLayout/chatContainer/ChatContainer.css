@@ -5,13 +5,15 @@
     flex-direction: column;
     background-color: #343541;
     color: white;
-    height: 100vh;
+    height: 100vh; /* На всю высоту окна */
     margin-left: 280px;
     transition: margin-left 0.3s ease-in-out;
+    overflow: hidden; /* ❗️ ВАЖНО: чтобы не появлялся внешний скролл */
 }
 
 /* Заголовок чата */
 .chat-header {
+    flex-shrink: 0; /* Чтобы заголовок не сплющивался */
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -39,23 +41,32 @@
 
 /* Сообщения */
 .chat-messages {
-    flex: 1;
+    flex: 1; /* Растягивается на всё доступное место */
+    min-height: 0; /* ❗️ ВАЖНО: позволяет flex-контейнеру сжиматься и скроллить контент */
     padding: 15px;
-    overflow-y: auto;
+    overflow-y: auto; /* Скролл только здесь */
     scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Прижимаем сообщения к низу */
+    gap: 12px;
 }
 
 .chat-messages::-webkit-scrollbar {
     display: none;
 }
+
 .chat-empty {
     text-align: center;
     color: #b0b0b0;
     font-style: italic;
     padding: 20px 0;
+    margin-top: auto; /* Чтобы надпись тоже была пониже, если пусто */
 }
+
 /* Поле ввода */
 .chat-input {
+    flex-shrink: 0; /* ❗️ ВАЖНО: Запрещаем полю ввода сжиматься/исчезать */
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -70,7 +81,12 @@
     border: none;
     border-radius: 5px;
     background-color: #444;
-    olor: white;
+    color: white;
+}
+
+.chat-input input::placeholder {
+    color: #b0b0b0;
+    opacity: 1;
 }
 
 .chat-input-actions {
@@ -80,12 +96,35 @@
 }
 
 .chat-file-input {
-    color: #fff;
+    display: none;
+}
+
+.chat-file-upload {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background-color: #3a3b3f;
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.chat-file-upload:hover {
+    background-color: #4a4b50;
+    transform: translateY(-1px);
 }
 
 .chat-attachment-clear {
     background-color: #555;
     padding: 8px 10px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
 }
 
 .chat-attachment-clear:hover {
@@ -110,7 +149,7 @@
     cursor: not-allowed;
 }
 
-/* Модальное окно */
+/* Модальные окна */
 .chat-modal-overlay {
     position: fixed;
     top: 0;
@@ -121,6 +160,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
 }
 
 .chat-modal {
@@ -145,7 +185,6 @@
     overflow-y: auto;
 }
 
-/* Элемент списка участника */
 .chat-users-list li {
     display: flex;
     align-items: center;
@@ -157,9 +196,8 @@
     color: white;
 }
 
-/* Маленькие фото участников */
 .user-avatar {
-    width: 35px; /* 🔹 Уменьшенный размер фото */
+    width: 35px;
     height: 35px;
     border-radius: 50%;
     object-fit: cover;
@@ -190,8 +228,108 @@
     border-radius: 5px;
     cursor: pointer;
     margin-top: 10px;
+    width: 100%;
 }
 
 .chat-modal-close:hover {
     background: darkred;
+}
+
+/* Модальное окно редактирования/удаления */
+.message-edit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.message-edit-content, .message-delete-content {
+    background: #282c34;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+    width: 320px;
+}
+
+.message-edit-content h3 {
+    margin-bottom: 10px;
+}
+
+.message-edit-content textarea {
+    width: 100%;
+    height: 80px;
+    padding: 10px;
+    background: #3b3f46;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    resize: none;
+    margin-bottom: 10px;
+}
+
+.message-preview {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #ccc;
+}
+
+.message-delete-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    justify-content: center;
+}
+
+/* Общие стили кнопок в модалках */
+.message-edit-content button,
+.message-delete-content button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+/* Кнопки Save */
+.message-edit-content button:first-of-type {
+    background-color: #0077cc;
+    color: white;
+}
+.message-edit-content button:first-of-type:hover {
+    background-color: #005fa3;
+}
+
+/* Кнопки Delete */
+.message-edit-content button:nth-of-type(2),
+.message-delete-content button:first-of-type {
+    background-color: #d93025;
+    color: white;
+}
+.message-edit-content button:nth-of-type(2):hover,
+.message-delete-content button:first-of-type:hover {
+    background-color: #b02018;
+}
+
+/* Кнопки Cancel */
+.message-edit-content button:last-of-type,
+.message-delete-content button:last-of-type {
+    background-color: #555;
+    color: white;
+}
+.message-edit-content button:last-of-type:hover,
+.message-delete-content button:last-of-type:hover {
+    background-color: #666;
 }
