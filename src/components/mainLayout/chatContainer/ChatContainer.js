@@ -52,25 +52,55 @@ const ChatContainer = ({ activeChat, userId }) => {
     }, [currentUserId, currentUsername]);
 
     const fetchMessages = useCallback(() => {
-        if (!activeChat?.id || activeChat?.type !== "group") return;
+        if (!activeChat?.id) return;
 
-        if (!isAuthenticated) {
-            if (activeChat.id !== 1) {
-                notify("Login required to view messages in this room.", "warning");
+        if (activeChat.type === "group") {
+            if (!isAuthenticated) {
+                if (activeChat.id !== 1) {
+                    notify("Login required to view messages in this room.", "warning");
+                }
+                return;
             }
+
+            apiFetch(`/api/messages/${activeChat.id}`, { method: "GET" }, { parse: "json" })
+                .then(data => {
+                    const messagesData = Array.isArray(data) ? data : [];
+                    console.log("Messages received:", messagesData);
+                    setMessages(messagesData.map(normalizeGroupMessage));
+                })
+                .catch(() => {
+                    notify("Failed to load messages.", "error");
+                });
             return;
         }
 
-        apiFetch(`/api/messages/${activeChat.id}`, { method: "GET" }, { parse: "json" })
-            .then(data => {
-                const messagesData = Array.isArray(data) ? data : [];
-                console.log("Messages received:", messagesData);
-                setMessages(messagesData.map(normalizeGroupMessage));
-            })
-            .catch(() => {
-                notify("Failed to load messages.", "error");
-            });
-    }, [activeChat?.id, activeChat?.type, isAuthenticated, notify, normalizeGroupMessage]);
+        if (activeChat.type === "private") {
+            if (!isAuthenticated) {
+                notify("Login required to view private messages.", "warning");
+                return;
+            }
+
+            if (!activeChat.recipientUsername) return;
+
+            apiFetch(`/api/private-messages/${activeChat.recipientUsername}`, { method: "GET" }, { parse: "json" })
+                .then(data => {
+                    const messagesData = Array.isArray(data) ? data : [];
+                    console.log("Private messages received:", messagesData);
+                    setMessages(messagesData.map(normalizePrivateMessage));
+                })
+                .catch(() => {
+                    notify("Failed to load private messages.", "error");
+                });
+        }
+    }, [
+        activeChat?.id,
+        activeChat?.type,
+        activeChat?.recipientUsername,
+        isAuthenticated,
+        notify,
+        normalizeGroupMessage,
+        normalizePrivateMessage
+    ]);
 
     // Fetch users function (fixed syntax error here)
     const fetchChatUsers = useCallback(() => {
@@ -182,8 +212,22 @@ const ChatContainer = ({ activeChat, userId }) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(messageData),
-            }, { parse: "json" })
-                .then((data) => {
+            }, { parse: "text" })
+                .then((responseText) => {
+                    if (!responseText) {
+                        notify("Server returned an empty response for the private message.", "error");
+                        return;
+                    }
+
+                    let data;
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch (error) {
+                        console.error("Failed to parse private message response:", error);
+                        notify("Failed to parse the private message response.", "error");
+                        return;
+                    }
+
                     setMessages((prev) => [...prev, normalizePrivateMessage(data)]);
                     setNewMessage("");
                 })
